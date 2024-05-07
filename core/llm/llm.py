@@ -95,7 +95,7 @@ def after_extract(result):
 
 
 # 入口，包括事前、事中、事后处理
-def extract_bill(text, provider=LlmProvider.AZURE_OPENAI, sys_prompt=None, callback=None):
+def extract_bill(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=None):
     # 事前
     ret = before_extract(text)
 
@@ -106,7 +106,7 @@ def extract_bill(text, provider=LlmProvider.AZURE_OPENAI, sys_prompt=None, callb
     return after_extract(ret)
 
 
-def extract(text, provider=LlmProvider.AZURE_OPENAI, sys_prompt=None, callback=None):
+def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=None):
     if provider == LlmProvider.MOCK:
         # 模拟延时，睡眠1秒
         time.sleep(1)
@@ -134,13 +134,24 @@ def extract(text, provider=LlmProvider.AZURE_OPENAI, sys_prompt=None, callback=N
     if provider == LlmProvider.GPT4:
         return LLMOpenAI("gpt-4-turbo-preview", None, True, callback).generate_text(text, sys_prompt)
 
-    if provider == LlmProvider.AZURE_OPENAI:
+    if provider == LlmProvider.AZURE_GPT4:
         client = AzureOpenAI(
             api_key=os.environ['AZURE_OPENAI_API_KEY'],
             api_version=os.environ['OPENAI_API_VERSION'],
             azure_endpoint=os.environ['AZURE_OPENAI_ENDPOINT']
         )
         model = os.environ['OPENAI_DEPLOYMENT_NAME']
+        print("使用模型API：Azure ", model)
+        return LLMOpenAI(model, client, True, callback).generate_text(text, sys_prompt)
+
+    if provider == LlmProvider.AZURE_GPT35:
+        client = AzureOpenAI(
+            api_key=os.environ['AZURE_OPENAI_GPT35_API_KEY'],
+            api_version=os.environ['OPENAI_API_GPT35_VERSION'],
+            azure_endpoint=os.environ['AZURE_OPENAI_GPT35_ENDPOINT']
+        )
+        model = os.environ['OPENAI_GPT35_DEPLOYMENT_NAME']
+        print("使用模型API：Azure ", model)
         return LLMOpenAI(model, client, True, callback).generate_text(text, sys_prompt)
 
     return """ {"Doc Type": "LLM配置错误"}"""

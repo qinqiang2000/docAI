@@ -18,7 +18,6 @@ class LLMOpenAI:
             self.client = client
 
     def generate_text(self, text, sys_prompt):
-        print("使用模型API：", self.model)
         try:
             response = self.client.chat.completions.create(
                 model=self.model,

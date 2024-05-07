@@ -3,8 +3,9 @@ from enum import Enum
 
 
 class LlmProvider(Enum):
+    AZURE_GPT35 = 7
+    AZURE_GPT4 = 1
     GPT35 = 3
-    AZURE_OPENAI = 1
     GPT4 = 2
     MOONSHOT = 4
     GEMINI_PRO = 5

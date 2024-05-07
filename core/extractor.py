@@ -14,8 +14,8 @@ from core.llm import llm
 
 def save_uploaded_file(_file):
     dir_name = 'tmp'
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
+    os.makedirs(dir_name, exist_ok=True)
+
     hasher = hashlib.sha256()
     _file.seek(0)
     for chunk in iter(lambda: _file.read(4096), b''):
@@ -67,9 +67,10 @@ class Extractor:
                 break
 
             # 提取字段
-            # ret = llm.extract_bill(text, llm_provider, self.generate_prompt(), callback=stream_callback)
-            # result.append(ret)
-            result =[[{'Doc Type': 'other', 'Invoice No.': 'FPL2308002', 'Invoice Date': '3-Aug-23', 'Currency': '', 'Amount': 0, 'Bill To': '海信(香港)有限公司', 'From': '福芯電子有限公司', 'Ship To': '青旅思捷物流有限公司'}], [{'Doc Type': 'Invoice', 'Invoice Date': '3-Aug-23', 'Currency': 'USD', 'Amount': 15048.0, 'Bill To': '海信(香港)有限公司', 'From': '福芯電子有限公司 FORCHIP ELECTRONICS LIMITED'}]]
+            print(text)
+            ret = llm.extract_bill(text, llm_provider, self.generate_prompt(), callback=stream_callback)
+            result.append(ret)
+            # result =[[{'Doc Type': 'other', 'Invoice No.': 'FPL2308002', 'Invoice Date': '3-Aug-23', 'Currency': '', 'Amount': 0, 'Bill To': '海信(香港)有限公司', 'From': '福芯電子有限公司', 'Ship To': '青旅思捷物流有限公司'}], [{'Doc Type': 'Invoice', 'Invoice Date': '3-Aug-23', 'Currency': 'USD', 'Amount': 15048.0, 'Bill To': '海信(香港)有限公司', 'From': '福芯電子有限公司 FORCHIP ELECTRONICS LIMITED'}]]
 
         logging.info(f"{file.name}: {result}")
         return result
