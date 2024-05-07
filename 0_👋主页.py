@@ -5,7 +5,7 @@ st.set_page_config(
     page_icon="👋",
 )
 
-st.write("# Welcome to Streamlit! 👋")
+st.write("# 欢迎使用智能提取平台! 👋")
 
 st.sidebar.success("Select a demo above.")
 

@@ -1,0 +1,7 @@
+streamlit
+streamlit-pdf-reader
+streamlit_elements
+pdfplumber
+PyMuPDF==1.23.8
+python-dotenv
+openai
