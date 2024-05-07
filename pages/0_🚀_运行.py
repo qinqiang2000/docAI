@@ -5,6 +5,7 @@ from streamlit_js_eval import streamlit_js_eval
 from streamlit_pdf_reader import pdf_reader
 from core.extractor_manager import ExtractorManager
 from core.common import LlmProvider, OCRProvider, DocLanguage
+from PIL import Image
 
 st.set_page_config(
     page_title="运行",
@@ -63,8 +64,31 @@ def steam_callback(chuck):
         session["result_placeholder"].markdown(session['text'])
 
 
+def display_image(file):
+    image = Image.open(file)
+    if 'rotated_image' not in st.session_state:
+        st.session_state['rotated_image'] = image
+
+    st.image(st.session_state['rotated_image'], use_column_width=True)
+
+    _, col1, col2, _ = st.columns([3/8, 1/8, 1/8, 3/8])
+    with col1:
+        if st.button("↩️"):
+            st.session_state['rotated_image'] = st.session_state['rotated_image'].rotate(90, expand=True)
+            st.rerun()
+    with col2:
+        if st.button("↪️"):
+            st.session_state['rotated_image'] = st.session_state['rotated_image'].rotate(-90, expand=True)
+            st.rerun()
+
+
 def display_process(file):
-    pdf_reader(file)  # display file
+    file_type = file.type
+    if "pdf" in file_type:
+        pdf_reader(file)  # display file
+    elif "image" in file_type:
+        display_image(file)
+
     session['text'] = ""  # clear text
     session['data'] = []
 
@@ -72,21 +96,22 @@ def display_process(file):
         steam_callback("No extractor selected")
         return
 
-    for option in session['selected_extractor']:
-        extractor = manager.get_extractor(option)
-        data_list = extractor.run(file, steam_callback, llm_provider=session["selected_llm_provider"],
-                                  ocr_provider=session["selected_ocr_provider"], lang=session["selected_lang"])
-        data_str_list = []
-        for data in data_list:
-            data_str = [{k: str(v) for k, v in item.items()} for item in data]  # 将数据转换为字符串以确保兼容性
-            data_str_list.append(data_str)
-
-        session['data'].append((option, data_str_list))  # 将数据存储在session_state中
+    # for option in session['selected_extractor']:
+    #     extractor = manager.get_extractor(option)
+    #     data_list = extractor.run(file, steam_callback, llm_provider=session["selected_llm_provider"],
+    #                               ocr_provider=session["selected_ocr_provider"], lang=session["selected_lang"])
+    #     data_str_list = []
+    #     for data in data_list:
+    #         data_str = [{k: str(v) for k, v in item.items()} for item in data]  # 将数据转换为字符串以确保兼容性
+    #         data_str_list.append(data_str)
+    #
+    #     session['data'].append((option, data_str_list))  # 将数据存储在session_state中
 
 
 # 侧边栏
 with st.sidebar:
-    _file = st.file_uploader("Choose a file", type=["pdf"], key='uploaded_file', on_change=handle_file_upload,
+    _file = st.file_uploader("Choose a file", type=['pdf', 'jpg', 'jpeg', 'png'], key='uploaded_file',
+                             on_change=handle_file_upload,
                              label_visibility='collapsed')
     # Dropdown for selecting an extractor
     available_extractors = manager.get_extractors_list()
