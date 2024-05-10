@@ -6,6 +6,7 @@ from streamlit_pdf_reader import pdf_reader
 from core.extractor_manager import ExtractorManager
 from core.common import LlmProvider, OCRProvider, DocLanguage
 from PIL import Image
+from file_server import save_uploaded_file, port
 
 st.set_page_config(
     page_title="运行",
@@ -16,15 +17,12 @@ st.set_page_config(
     }
 )
 
-# Create an instance of the manager
-manager = ExtractorManager()
-
 # 自定义CSS来减少边距和填充
 st.markdown("""
 <style>
 /* 用于整个页面的块容器的样式 */
 [data-testid="stAppViewBlockContainer"] {
-    padding-top: 2rem;
+    padding-top: 1rem;
     padding-right: 1rem; /* 右边距 */
     padding-left: 1rem; /* 左边距 */
     padding-bottom: 0rem;
@@ -34,6 +32,13 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
+screen_height = streamlit_js_eval(js_expressions='screen.height', key='SCR')
+height = None if not screen_height else screen_height - 100
+hostname = streamlit_js_eval(js_expressions='window.location.hostname', key='hostname')
+
+# Create an instance of the manager
+manager = ExtractorManager()
 
 if 'text' not in session:
     session['text'] = ""
@@ -46,16 +51,19 @@ def style_columns(df):
 
     def val_text_color(val):
         return 'color: #2b66c2'
+
     return (df.style
             .map(key_text_color, subset=['key'])  # Using .map for column-wise styling
             .map(val_text_color, subset=['value']))
 
 
 def handle_file_upload():
-    uploaded_file = session['uploaded_file']
-    if uploaded_file is None:
+    if session['uploaded_file'] is None:
         session.pop('text', None)  # Safely remove 'text' if it exists, do nothing if it doesn't
         session.pop('data', None)  # Safely remove 'data' if it exists, do nothing if it doesn't
+        session.pop('file_index', 0)
+    else:
+        session['file_index'] = 0
 
 
 def steam_callback(chuck):
@@ -71,7 +79,7 @@ def display_image(file):
 
     st.image(st.session_state['rotated_image'], use_column_width=True)
 
-    _, col1, col2, _ = st.columns([3/8, 1/8, 1/8, 3/8])
+    _, col1, col2, _ = st.columns([3 / 8, 1 / 8, 1 / 8, 3 / 8])
     with col1:
         if st.button("↩️"):
             st.session_state['rotated_image'] = st.session_state['rotated_image'].rotate(90, expand=True)
@@ -82,37 +90,50 @@ def display_image(file):
             st.rerun()
 
 
+def display_pdf(file_path):
+    # 获取file_path的文件名字
+    filename = file_path.split("/")[-1]
+    pdf_url = f"http://{hostname}:{port}/{filename}"
+    pdf_display = f'<embed src="{pdf_url}" type="application/pdf" width="100%" height={height} />'
+    # f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height={height} type="application/pdf">'
+    st.markdown(pdf_display, unsafe_allow_html=True)
+
+
 def display_process(file):
-    file_type = file.type
-    if "pdf" in file_type:
-        pdf_reader(file)  # display file
-    elif "image" in file_type:
+    file_path = save_uploaded_file(file)
+
+    if "pdf" in file.type:
+        # pdf_reader(file)  # display file
+        display_pdf(file_path)  # display file
+    elif "image" in file.type:
         display_image(file)
+    else:
+        st.warning("Unsupported file type")
+        return
 
     session['text'] = ""  # clear text
     session['data'] = []
 
     if not session['selected_extractor'] or len(session['selected_extractor']) <= 0:
-        steam_callback("No extractor selected")
+        st.warning("No extractor selected")
         return
 
-    # for option in session['selected_extractor']:
-    #     extractor = manager.get_extractor(option)
-    #     data_list = extractor.run(file, steam_callback, llm_provider=session["selected_llm_provider"],
-    #                               ocr_provider=session["selected_ocr_provider"], lang=session["selected_lang"])
-    #     data_str_list = []
-    #     for data in data_list:
-    #         data_str = [{k: str(v) for k, v in item.items()} for item in data]  # 将数据转换为字符串以确保兼容性
-    #         data_str_list.append(data_str)
-    #
-    #     session['data'].append((option, data_str_list))  # 将数据存储在session_state中
+    for option in session['selected_extractor']:
+        extractor = manager.get_extractor(option)
+        data_list = extractor.run(file_path, steam_callback, llm_provider=session["selected_llm_provider"],
+                                  ocr_provider=session["selected_ocr_provider"], lang=session["selected_lang"])
+        data_str_list = []
+        for data in data_list:
+            data_str = [{k: str(v) for k, v in item.items()} for item in data]  # 将数据转换为字符串以确保兼容性
+            data_str_list.append(data_str)
+
+        session['data'].append((option, data_str_list))  # 将数据存储在session_state中
 
 
 # 侧边栏
 with st.sidebar:
-    _file = st.file_uploader("Choose a file", type=['pdf', 'jpg', 'jpeg', 'png'], key='uploaded_file',
-                             on_change=handle_file_upload,
-                             label_visibility='collapsed')
+    _files = st.file_uploader("Choose a file", type=['pdf', 'jpg', 'jpeg', 'png'], key='uploaded_file',
+                              on_change=handle_file_upload, accept_multiple_files=True, label_visibility='collapsed')
     # Dropdown for selecting an extractor
     available_extractors = manager.get_extractors_list()
     session['selected_extractor'] = st.multiselect("提取器", options=available_extractors,
@@ -134,8 +155,9 @@ col1, col2 = st.columns(cols)
 
 # 左面板，预览PDF或图片
 with col1.container():
-    if _file is not None:
-        display_process(_file)
+    if _files is not None and len(_files) > 0:
+        idx = session.get('file_index', 0)
+        display_process(_files[idx])
 
 column_config = {
     "key": st.column_config.TextColumn(
@@ -146,20 +168,33 @@ column_config = {
     ),
 }
 
+
+def show_data(name, data_list):
+    """
+    显示提取的结构化数据。
+    参数:
+    name (str): 提取器的名称。
+    data_list (list): 包含提取的数据的列表，每个元素是一个字典，表示一页的数据。
+    """
+    for i, page_data in enumerate(data_list):
+        st.write("[", name, "]", "第", i + 1, "页")
+        for item in page_data:
+            df = pd.DataFrame(list(item.items()))
+            df.columns = ['key', 'value']
+            st.dataframe(style_columns(df), hide_index=True, use_container_width=True, column_config=column_config)
+
+
 # 右面板，呈现数据
-screen_height = streamlit_js_eval(js_expressions='screen.height', key='SCR')
-height = None if not screen_height else screen_height - 100
 with col2.container(height=height, border=False):  # Adjusted for interface elements
     if 'data' in session:
         for name, data_list in session['data']:
-            for i, data in enumerate(data_list):
-                for item in data:
-                    df = pd.DataFrame(list(item.items()))
-                    df.columns = ['key', 'value']
-                st.write("[", name, "]", "第", i+1, "页")
-                # html = style_columns(df).to_html(index=False, header=False, classes='data-table')
-                # st.markdown(html, unsafe_allow_html=True)
-                st.dataframe(style_columns(df), hide_index=True, use_container_width=True, column_config=column_config)
+            show_data(name, data_list)
+
+        if st.button(f"下一个({session['file_index'] + 1}/{len(_files)})"):
+            session['file_index'] = (session['file_index'] + 1) % len(_files)
+            session.pop('rotated_image', None)
+            st.rerun()
+
     # 流式呈现过程数据
     session["result_placeholder"] = st.empty()
     session["result_placeholder"].write(session['text'])

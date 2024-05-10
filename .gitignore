@@ -11,7 +11,7 @@
 
 # 忽略目标目录  
 target/  
-uploads/
+tmp/
 venv/
 dist/
 build/

@@ -1,7 +1,10 @@
 streamlit
 streamlit-pdf-reader
 streamlit_elements
+streamlit_js_eval
 pdfplumber
 PyMuPDF==1.23.8
 python-dotenv
 openai
+flask
+pandas

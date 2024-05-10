@@ -3,6 +3,7 @@ import os.path as osp
 import pdfplumber
 from dotenv import load_dotenv
 import logging
+import re
 
 from core.common import OCRProvider, DocLanguage
 from core.retrieval.ocr import ocr
@@ -10,6 +11,17 @@ from core.retrieval.ocr import ocr
 logging.basicConfig(format='[%(asctime)s %(filename)s:%(lineno)d] %(levelname)s: %(message)s', level=logging.INFO, force=True)
 load_dotenv(override=True)
 fonts_list = os.getenv("KNOWN_FONTS").split(',')
+
+
+def cid_percentage(text):
+    # 计算文本中CID字符的比例
+    cid_matches = re.findall(r'\(cid:\d+\)', text)
+    cid_length = sum(len(match) for match in cid_matches)
+    total_length = len(text)
+
+    # 计算比例
+    percentage = cid_length / total_length * 100
+    return percentage
 
 
 # 异步读取文档，将结果放入队列
@@ -27,8 +39,9 @@ def async_load(doc_path, queue, provider=OCRProvider.RuiZhen, lang=DocLanguage.c
     for page in pdf.pages:
         text = page.extract_text()
 
-        # todo: 校验字体
-        if not text or len(text) < 39 or len(page.images) > 5:  # 扫描件，39是一个经验值
+        # todo: 校验字体；经验值常量化
+        # 判断是否扫描件后包含无法解析字体，39是一个经验值
+        if not text or len(text) < 39 or len(page.images) > 5 or cid_percentage(text) > 19:
             logging.info(f"扫描件[{osp.split(doc_path)[1]}]: len(text)[{len(text)}], len(images)[{len(page.images)}]")
             text = ocr(doc_path, page.page_number, provider, lang)
 

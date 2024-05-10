@@ -5,24 +5,18 @@ st.set_page_config(
     page_icon="👋",
 )
 
-st.write("# 欢迎使用智能提取平台! 👋")
+st.write("# 欢迎使用Document AI平台! 👋")
 
-st.sidebar.success("Select a demo above.")
 
 st.markdown(
     """
-    Streamlit is an open-source app framework built specifically for
-    Machine Learning and Data Science projects.
-    **👈 Select a demo from the sidebar** to see some examples
-    of what Streamlit can do!
-    ### Want to learn more?
-    - Check out [streamlit.io](https://streamlit.io)
-    - Jump into our [documentation](https://docs.streamlit.io)
-    - Ask a question in our [community
-        forums](https://discuss.streamlit.io)
-    ### See more complex demos
-    - Use a neural net to [analyze the Udacity Self-driving Car Image
-        Dataset](https://github.com/streamlit/demo-self-driving)
-    - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
+    Document AI可以智能提取文档中的结构化信息，帮助您快速完成文档处理工作。
+    ### 体验
+    - 👈 你从左侧上传一个示例文档做实验 
+    ### 想自定义提取要素?
+    - 请点击👈左侧的 "设置" 按钮
+    ### 想评估模型的性能?
+    - 请点击👈左侧的 "数据集" 按钮，创建要评估的数据集
+    - 然后点击👈左侧的 "评估" 按钮
 """
 )
