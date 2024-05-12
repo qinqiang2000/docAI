@@ -2,11 +2,11 @@ import pandas as pd
 import streamlit as st
 from streamlit import session_state as session
 from streamlit_js_eval import streamlit_js_eval
-from streamlit_pdf_reader import pdf_reader
 from core.extractor_manager import ExtractorManager
 from core.common import LlmProvider, OCRProvider, DocLanguage
 from PIL import Image
-from file_server import save_uploaded_file, port
+from file_server import save_uploaded_tmp_file, port
+from tools.utitls import wide_styles
 
 st.set_page_config(
     page_title="运行",
@@ -18,20 +18,7 @@ st.set_page_config(
 )
 
 # 自定义CSS来减少边距和填充
-st.markdown("""
-<style>
-/* 用于整个页面的块容器的样式 */
-[data-testid="stAppViewBlockContainer"] {
-    padding-top: 1rem;
-    padding-right: 1rem; /* 右边距 */
-    padding-left: 1rem; /* 左边距 */
-    padding-bottom: 0rem;
-}
-[data-testid="stDataFrame"]  {
-    white-space: pre-wrap; /* CSS property to make whitespace significant */
-}
-</style>
-""", unsafe_allow_html=True)
+wide_styles()
 
 screen_height = streamlit_js_eval(js_expressions='screen.height', key='SCR')
 height = None if not screen_height else screen_height - 100
@@ -93,14 +80,13 @@ def display_image(file):
 def display_pdf(file_path):
     # 获取file_path的文件名字
     filename = file_path.split("/")[-1]
-    pdf_url = f"http://{hostname}:{port}/{filename}"
+    pdf_url = f"http://{hostname}:{port}/files?fn=tmp/{filename}"
     pdf_display = f'<embed src="{pdf_url}" type="application/pdf" width="100%" height={height} />'
-    # f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height={height} type="application/pdf">'
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
 def display_process(file):
-    file_path = save_uploaded_file(file)
+    file_path = save_uploaded_tmp_file(file)
 
     if "pdf" in file.type:
         # pdf_reader(file)  # display file

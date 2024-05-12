@@ -15,6 +15,7 @@ tmp/
 venv/
 dist/
 build/
+data/
 
 # 忽略Python编译文件  
 *.pyc  

@@ -1,6 +1,8 @@
 import hashlib
 from enum import Enum
 
+DATASET_DIR = "data/dataset"
+
 
 class LlmProvider(Enum):
     AZURE_GPT35 = 7
