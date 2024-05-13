@@ -1,3 +1,4 @@
+import json
 import logging
 import queue
 import threading
@@ -21,8 +22,12 @@ class Extractor:
         result = result + "输出要求：以JSON数组输出答案；确保用```json 和 ```标签包装答案。"
         return result
 
+    def mock_ret(self):
+        mock_data = [{key: "" for key in self.fields.keys()}]
+        return mock_data
+
     def run(self, file_path, stream_callback,
-            llm_provider=LlmProvider.GPT35, ocr_provider=OCRProvider.RuiZhen, lang=DocLanguage.chs):
+            llm_provider=LlmProvider.AZURE_GPT35, ocr_provider=OCRProvider.RuiZhen, lang=DocLanguage.chs):
         """
         Process the given file based on the core's configuration and stream the results
         using the provided stream_callback function.
@@ -41,15 +46,11 @@ class Extractor:
                 break
 
             # 提取字段
-            logging.info(f"第{page_no}页：{text}")
-            if llm_provider == LlmProvider.MOCK:
-                result = [[{'Doc Type': 'other', 'Invoice No.': 'FPL2308002', 'Invoice Date': '3-Aug-23', 'Currency': '',
-                          'Amount': 0, 'Bill To': '海信(香港)有限公司', 'From': '福芯電子有限公司',
-                          'Ship To': '青旅思捷物流有限公司'}], [
-                            {'Doc Type': 'Invoice', 'Invoice Date': '3-Aug-23', 'Currency': 'USD', 'Amount': 15048.0,
-                             'Bill To': '海信(香港)有限公司', 'From': '福芯電子有限公司 FORCHIP ELECTRONICS LIMITED'}]]
-
-            ret = llm.extract_bill(text, llm_provider, self.generate_prompt(), callback=stream_callback)
+            if llm_provider == LlmProvider.MOCK:  # 使用mock数据
+                ret = self.mock_ret()
+            else:
+                # logging.info(f"第{page_no}页：{text}")
+                ret = llm.extract_bill(text, llm_provider, self.generate_prompt(), callback=stream_callback)
             result.append(ret)
 
         logging.info(f"{file_path}: {result}")

@@ -71,7 +71,7 @@ def ocr(doc_path, page_no, provider=OCRProvider.MOCK, lang=DocLanguage.chs):
     text = ""
     if provider == OCRProvider.MOCK:
         text = mock_ocr(doc_path)
-        logging.info("使用mock ocr, text=" + text)
+        # logging.info("使用mock ocr, text=" + text)
         return text
     elif provider == OCRProvider.RuiZhen:
         text = ruizhen_ocr(doc_path, lang)

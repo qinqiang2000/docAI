@@ -2,6 +2,7 @@ import hashlib
 from enum import Enum
 
 DATASET_DIR = "data/dataset"
+LABEL_DIR = "data/labels"
 
 
 class LlmProvider(Enum):

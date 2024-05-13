@@ -6,7 +6,7 @@ from core.extractor_manager import ExtractorManager
 from core.common import LlmProvider, OCRProvider, DocLanguage
 from PIL import Image
 from file_server import save_uploaded_tmp_file, port
-from tools.utitls import wide_styles
+from tools.utitls import custom_page_styles, show_struct_data, display_image
 
 st.set_page_config(
     page_title="运行",
@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # 自定义CSS来减少边距和填充
-wide_styles()
+custom_page_styles()
 
 screen_height = streamlit_js_eval(js_expressions='screen.height', key='SCR')
 height = None if not screen_height else screen_height - 100
@@ -29,19 +29,6 @@ manager = ExtractorManager()
 
 if 'text' not in session:
     session['text'] = ""
-
-
-# 定制表格列style
-def style_columns(df):
-    def key_text_color(val):
-        return 'color: black'
-
-    def val_text_color(val):
-        return 'color: #2b66c2'
-
-    return (df.style
-            .map(key_text_color, subset=['key'])  # Using .map for column-wise styling
-            .map(val_text_color, subset=['value']))
 
 
 def handle_file_upload():
@@ -57,24 +44,6 @@ def steam_callback(chuck):
     session['text'] += chuck
     if session["result_placeholder"]:
         session["result_placeholder"].markdown(session['text'])
-
-
-def display_image(file):
-    image = Image.open(file)
-    if 'rotated_image' not in st.session_state:
-        st.session_state['rotated_image'] = image
-
-    st.image(st.session_state['rotated_image'], use_column_width=True)
-
-    _, col1, col2, _ = st.columns([3 / 8, 1 / 8, 1 / 8, 3 / 8])
-    with col1:
-        if st.button("↩️"):
-            st.session_state['rotated_image'] = st.session_state['rotated_image'].rotate(90, expand=True)
-            st.rerun()
-    with col2:
-        if st.button("↪️"):
-            st.session_state['rotated_image'] = st.session_state['rotated_image'].rotate(-90, expand=True)
-            st.rerun()
 
 
 def display_pdf(file_path):
@@ -155,26 +124,11 @@ column_config = {
 }
 
 
-def show_data(name, data_list):
-    """
-    显示提取的结构化数据。
-    参数:
-    name (str): 提取器的名称。
-    data_list (list): 包含提取的数据的列表，每个元素是一个字典，表示一页的数据。
-    """
-    for i, page_data in enumerate(data_list):
-        st.write("[", name, "]", "第", i + 1, "页")
-        for item in page_data:
-            df = pd.DataFrame(list(item.items()))
-            df.columns = ['key', 'value']
-            st.dataframe(style_columns(df), hide_index=True, use_container_width=True, column_config=column_config)
-
-
 # 右面板，呈现数据
 with col2.container(height=height, border=False):  # Adjusted for interface elements
     if 'data' in session:
         for name, data_list in session['data']:
-            show_data(name, data_list)
+            show_struct_data(name, data_list)
 
         if st.button(f"下一个({session['file_index'] + 1}/{len(_files)})"):
             session['file_index'] = (session['file_index'] + 1) % len(_files)
