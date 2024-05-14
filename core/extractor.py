@@ -35,9 +35,13 @@ class Extractor:
         Args:
         file (file-like object): The file to process.
         stream_callback (function): A callback function to stream processing results.
+        ocr_provider: 如果是None，说明是用视觉模型
         """
+        logging.info(f"开始处理文件：{file_path}, OCR提供商：{ocr_provider}, 语言：{lang}")
         result = []
+
         # 异步读取/识别文档的raw text
+        # 如果ocr_provider是None，则返回的是图片的url
         q = queue.Queue()
         threading.Thread(target=async_load, args=(file_path, q, ocr_provider, lang)).start()
         while True:

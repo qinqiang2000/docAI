@@ -24,13 +24,37 @@ def cid_percentage(text):
     return percentage
 
 
-# 异步读取文档，将结果放入队列
-# queue：队列，元素是一个三元组：(页码, 识别结果, 总页数)； 页码为-1表示结束
+# pdf_path: pdf文件路径
+# page: pdfplumber.Page对象
+def save_page_as_image(pdf_path, page):
+    file_path, filename = os.path.split(pdf_path)
+    file_base, file_extension = os.path.splitext(filename)
+    dest_path = os.path.join(file_path, 'tmp', f"{file_base}_{page.page_number}.png")
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+    image = page.to_image(resolution=300)
+    image.save(dest_path, format='PNG')
+    logging.info(f"已保存第{page.page_number}页到：{dest_path}")
+    return dest_path
+
+
+# 异步读取文档，将结果放入队列queue
+# 如果provider!=None
+#   --queue：队列，元素是一个三元组：(页码, 识别结果, 总页数)； 页码为-1表示结束
+# 如果provider==None
+#   --如果pdf是图片
+#       --queue：队列，元素是一个三元组：(页码, 图片地址, 总页数)； 页码为-1表示结束
+#   --如果pdf是文本
+#       --queue：队列，元素是一个三元组：(页码, 识别结果, 总页数)； 页码为-1表示结束
+
 def async_load(doc_path, queue, provider=OCRProvider.RuiZhen, lang=DocLanguage.chs):
     # 非pdf文件，直接ocr
     if not doc_path.lower().endswith(".pdf"):
         logging.info(f"put to queue: {osp.split(doc_path)[1]}")
-        queue.put((1, ocr(doc_path, -1, provider, lang), 1))
+        if provider is None:
+            queue.put((1, doc_path, 1))
+        else:
+            queue.put((1, ocr(doc_path, -1, provider, lang), 1))
         queue.put((-1, None, -1))
         return
 
@@ -43,7 +67,10 @@ def async_load(doc_path, queue, provider=OCRProvider.RuiZhen, lang=DocLanguage.c
         # 判断是否扫描件后包含无法解析字体，39是一个经验值
         if not text or len(text) < 39 or len(page.images) > 5 or cid_percentage(text) > 19:
             logging.info(f"扫描件[{osp.split(doc_path)[1]}]: len(text)[{len(text)}], len(images)[{len(page.images)}]")
-            text = ocr(doc_path, page.page_number, provider, lang)
+            if provider is None:
+                text = save_page_as_image(doc_path, page)
+            else:
+                text = ocr(doc_path, page.page_number, provider, lang)
 
         logging.info(f"[{osp.split(doc_path)[1]}] put to queue: {page.page_number}")
         queue.put((page.page_number, text, num_pages))

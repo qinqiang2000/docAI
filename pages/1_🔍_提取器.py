@@ -50,6 +50,13 @@ def load_data(extractor=None):
 def on_change():
     st.session_state.state = None
 
+@st.experimental_dialog("确认删除？")
+def confirm_del(name):
+    st.write(f"Are you sure you want to delete {name}?")
+    if st.button("Submit"):
+        st.session_state['delete'] = name
+        st.rerun()
+
 
 if 'state' not in st.session_state:
     st.session_state.state = None
@@ -79,10 +86,10 @@ if selected_extractor and not new_extractor and st.session_state.state != "new":
     if c1.button("Save"):
         save_data(selected_extractor, name, description, fields, True)
     elif c2.button("Delete", key="Delete"):
-        if manager.delete_extractor(selected_extractor):
-            st.success(f"Extractor '{selected_extractor}' has been deleted!")
+        confirm_del(selected_extractor)
+        if st.session_state['delete'] == selected_extractor and manager.delete_extractor(selected_extractor):
             st.session_state.state = None
-            time.sleep(2)
+            st.session_state['delete'] = None
             st.rerun()
 
 # Creating or editing a core

@@ -131,8 +131,11 @@ def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=No
     if provider == LlmProvider.GPT35:
         return LLMOpenAI("gpt-3.5-turbo", None, True, callback).generate_text(text, sys_prompt)
 
-    if provider == LlmProvider.GPT4:
-        return LLMOpenAI("gpt-4-turbo-preview", None, True, callback).generate_text(text, sys_prompt)
+    if provider == LlmProvider.GPT4o:
+        return LLMOpenAI("gpt-4o", None, True, callback).generate_text(text, sys_prompt)
+
+    if provider == LlmProvider.GPT4o_V:
+        return LLMOpenAI("gpt-4o", None, True, callback).generate_text("", sys_prompt, text)
 
     if provider == LlmProvider.AZURE_GPT4:
         client = AzureOpenAI(

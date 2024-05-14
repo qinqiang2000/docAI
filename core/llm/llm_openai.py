@@ -4,6 +4,8 @@ import logging
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from core.common import local_image_to_data_url
+
 load_dotenv(override=True)
 
 
@@ -17,17 +19,22 @@ class LLMOpenAI:
         else:
             self.client = client
 
-    def generate_text(self, text, sys_prompt):
+    def generate_text(self, text, sys_prompt, file_path=None):
         try:
+            msgs = [{"role": "system", "content": sys_prompt}]
+            if text and len(text) > 0:
+                msgs.append({"role": "user", "content": text})
+            if file_path:
+                image_url = local_image_to_data_url(file_path)
+                m = {"role": "user", "content": [{"type": "image_url", "image_url": {"url": image_url}}]}
+                msgs.append(m)
+
             response = self.client.chat.completions.create(
                 model=self.model,
                 # response_format={"type": "json_object"},
                 temperature=0,
                 stream=self.stream,
-                messages=[
-                    {"role": "system", "content": sys_prompt},
-                    {"role": "user", "content": text}
-                ]
+                messages=msgs
             )
         except Exception as e:
             print(f"调用openai出错：{e}")
@@ -44,6 +51,7 @@ class LLMOpenAI:
                 if chunk.choices[0].delta.content is None:
                     continue
 
+                print(chunk.choices[0].delta.content, end='', flush=True)
                 if self.callback:
                     self.callback(chunk.choices[0].delta.content)
                 result += chunk.choices[0].delta.content

@@ -1,10 +1,8 @@
-import pandas as pd
 import streamlit as st
 from streamlit import session_state as session
 from streamlit_js_eval import streamlit_js_eval
 from core.extractor_manager import ExtractorManager
 from core.common import LlmProvider, OCRProvider, DocLanguage
-from PIL import Image
 from file_server import save_uploaded_tmp_file, port
 from tools.utitls import custom_page_styles, show_struct_data, display_image
 
@@ -32,10 +30,11 @@ if 'text' not in session:
 
 
 def handle_file_upload():
-    if session['uploaded_file'] is None:
+    if session['uploaded_file'] is None or len(session['uploaded_file']) == 0:
         session.pop('text', None)  # Safely remove 'text' if it exists, do nothing if it doesn't
         session.pop('data', None)  # Safely remove 'data' if it exists, do nothing if it doesn't
         session.pop('file_index', 0)
+        session.pop('rotated_image', None)
     else:
         session['file_index'] = 0
 
@@ -69,11 +68,16 @@ def display_process(file):
     session['text'] = ""  # clear text
     session['data'] = []
 
-    if not session['selected_extractor'] or len(session['selected_extractor']) <= 0:
+    if isinstance(session['selected_extractor'], list):
+        options = session['selected_extractor']
+    else:
+        options = [session['selected_extractor']]
+
+    if not options or len(options) <= 0:
         st.warning("No extractor selected")
         return
 
-    for option in session['selected_extractor']:
+    for option in options:
         extractor = manager.get_extractor(option)
         data_list = extractor.run(file_path, steam_callback, llm_provider=session["selected_llm_provider"],
                                   ocr_provider=session["selected_ocr_provider"], lang=session["selected_lang"])
@@ -91,15 +95,18 @@ with st.sidebar:
                               on_change=handle_file_upload, accept_multiple_files=True, label_visibility='collapsed')
     # Dropdown for selecting an extractor
     available_extractors = manager.get_extractors_list()
-    session['selected_extractor'] = st.multiselect("提取器", options=available_extractors,
-                                                   default=available_extractors[0],
-                                                   help="文档有混合要素时(如水费+电费)，可选择多个提取器")
+    session['selected_extractor'] = st.selectbox("提取器", options=available_extractors,
+                                                 help="暂不支持多选")
 
-    llm_provider = st.selectbox("LLM", options=list(LlmProvider.__members__.keys()))
+    llm_provider = st.selectbox("LLM", options=list(LlmProvider.__members__.keys()),help="带_V表示用纯视觉提取，不需先OCR")
     session["selected_llm_provider"] = LlmProvider[llm_provider]
 
-    ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), help="图片类文件才需OCR")
-    session["selected_ocr_provider"] = OCRProvider[ocr_provider]
+    # 如果session["selected_llm_provider"]以'_V'结尾，则将不能选OCR
+    if not session["selected_llm_provider"].name.endswith("_V"):
+        ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), help="图片类文件才需OCR")
+        session["selected_ocr_provider"] = OCRProvider[ocr_provider]
+    else:
+        session["selected_ocr_provider"] = None
 
     doc_language = st.selectbox("文档主要语种", options=[e.value for e in DocLanguage],
                                 help="部分OCR模块需指定语言；混合语言者，选占比最多的语种")
@@ -111,6 +118,7 @@ col1, col2 = st.columns(cols)
 # 左面板，预览PDF或图片
 with col1.container():
     if _files is not None and len(_files) > 0:
+        print([file.name for file in _files])
         idx = session.get('file_index', 0)
         display_process(_files[idx])
 
@@ -122,7 +130,6 @@ column_config = {
         "value", help="要素值", width="large"
     ),
 }
-
 
 # 右面板，呈现数据
 with col2.container(height=height, border=False):  # Adjusted for interface elements
