@@ -83,7 +83,6 @@ def load_file_label_data(file_path):
 # 外部导入已标注数据，格式需和本模块要求的一致
 @st.experimental_dialog("导入标注数据")
 def import_label_data(dataset, extractor):
-    print(dataset, extractor)
     file = st.file_uploader("上传CSV或Excel文件", type=["csv", "xlsx"])
     if not file:
         return
@@ -91,12 +90,27 @@ def import_label_data(dataset, extractor):
     data = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
 
     # 检查缺少的字段
-    missing_fields = [field for field in extractor.fields if field not in data.columns]
+    fields = extractor.fields
+    fields['file_name'] = None
+    fields['page_no'] = None
+    missing_fields = [field for field in fields if field not in data.columns]
     if missing_fields:
         st.error(f"缺少字段: {', '.join(missing_fields)}")
         return
 
-    st.write("数据预览:", data.head())
+    data = data.filter(items=fields.keys())
+
+    st.success("字段检查通过，数据预览:")
+    st.write(data.head())
+
+    if st.button("确认导入"):
+        grouped = data.groupby('file_name')
+        for file_name, group in grouped:
+            # 调用save_one_file_label函数保存数据
+            save_one_file_label(group, dataset, file_name, persist=False)
+
+        st.success("导入成功")
+        st.rerun()
 
 
 def process_file(file_path):
@@ -137,15 +151,7 @@ def load_label_data(dataset_name):
         logging.info(f"文件 {file_path} 不存在")
 
 
-def save_labels(labeled_data, filename, dataset_name, persist=True):
-    data_list = []
-    for i, df in enumerate(labeled_data):
-        data_dict = df.set_index('key')['value'].to_dict()
-        data_dict['file_name'] = filename
-        data_dict['page_no'] = i + 1
-        data_list.append(data_dict)
-    new_data = pd.DataFrame(data_list)
-
+def save_one_file_label(new_data, dataset_name, filename, persist=True):
     if 'label_data' in st.session_state and session['label_data'] is not None:
         # 如果label_data已经存在，我们需要删除相应的行
         session['label_data'] = session['label_data'].loc[
@@ -162,6 +168,18 @@ def save_labels(labeled_data, filename, dataset_name, persist=True):
     # 保存label_data到CSV文件
     csv_file_path = os.path.join(LABEL_DIR, f"{dataset_name}.csv")
     session['label_data'].to_csv(csv_file_path, index=False)
+
+
+def save_manual_labels(labeled_data, filename, dataset_name, persist=True):
+    data_list = []
+    for i, df in enumerate(labeled_data):
+        data_dict = df.set_index('key')['value'].to_dict()
+        data_dict['file_name'] = filename
+        data_dict['page_no'] = i + 1
+        data_list.append(data_dict)
+    new_data = pd.DataFrame(data_list)
+
+    save_one_file_label(new_data, dataset_name, filename, persist=persist)
 
 
 # --- 侧边栏 ---
@@ -229,12 +247,12 @@ with col2.container():
                        help="下一个文件，点击后自动保存当前文件的标注数据"):
             session['file_index'] = (session['file_index'] + 1) % len(_files)
             st.session_state.pop('rotated_image', None)
-            save_labels(labeled_data, session['selectbox_file'], selected_dataset)
+            save_manual_labels(labeled_data, session['selectbox_file'], selected_dataset)
             # 手动调用on_file_change函数
             on_file_change(session['file_list'][session['file_index']])
             st.rerun()
         if col2.button("保存", help="保存当前文件的标注数据"):
-            save_labels(labeled_data, session['selectbox_file'], selected_dataset)
+            save_manual_labels(labeled_data, session['selectbox_file'], selected_dataset)
             msg_placeholder.success(f"保存数据集[{selected_dataset}]成功")
             # todo:借助on_file_change函数更新数据(待优化)
             on_file_change()

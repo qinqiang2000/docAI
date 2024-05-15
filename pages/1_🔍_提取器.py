@@ -25,7 +25,7 @@ def save_data(old_name, name, description, fields, rerun=False):
         st.session_state.state = None
 
         # 删除老的extractor
-        if old_name:
+        if old_name and old_name != name:
             if manager.delete_extractor(old_name):
                 print(f"Old extractor: {old_name} deleted successfully!")
             else:
