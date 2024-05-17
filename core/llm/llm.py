@@ -2,10 +2,27 @@ import json
 import os
 import time
 import re
+from enum import Enum
 from typing import Any, List
 from openai.lib.azure import AzureOpenAI
 from core.llm.llm_openai import LLMOpenAI
-from core.common import LlmProvider
+
+
+class LlmProvider(Enum):
+    AZURE_GPT35 = 7
+    GPT4o = 8
+    GPT4o_V = 91
+    AZURE_GPT4 = 1
+    GPT35 = 3
+    # GPT4 = 2
+    # MOONSHOT = 4
+    # GEMINI_PRO = 5
+    MOCK = 6
+
+
+# option: LlmProvider类型
+def pure_llm(option):
+    return str(option.value).startswith('9') and option.value > 10
 
 
 def is_number(value):

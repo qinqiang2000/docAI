@@ -2,7 +2,8 @@ import streamlit as st
 from streamlit import session_state as session
 from streamlit_js_eval import streamlit_js_eval
 from core.extractor_manager import ExtractorManager
-from core.common import LlmProvider, OCRProvider, DocLanguage
+from core.common import OCRProvider, DocLanguage
+from core.llm.llm import LlmProvider, pure_llm
 from file_server import save_uploaded_tmp_file, port
 from tools.utitls import custom_page_styles, show_struct_data, display_image
 
@@ -102,7 +103,7 @@ with st.sidebar:
     session["selected_llm_provider"] = LlmProvider[llm_provider]
 
     # 如果session["selected_llm_provider"]以'_V'结尾，则将不能选OCR
-    if not session["selected_llm_provider"].name.endswith("_V"):
+    if pure_llm(session["selected_llm_provider"]):
         ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), help="图片类文件才需OCR")
         session["selected_ocr_provider"] = OCRProvider[ocr_provider]
     else:

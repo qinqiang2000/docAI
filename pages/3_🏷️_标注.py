@@ -7,8 +7,9 @@ from streamlit import session_state as session
 import pandas as pd
 from streamlit_js_eval import streamlit_js_eval
 
-from core.common import DATASET_DIR, DocLanguage, LlmProvider, OCRProvider, LABEL_DIR
+from core.common import DATASET_DIR, DocLanguage, OCRProvider, LABEL_DIR
 from core.extractor_manager import ExtractorManager
+from core.llm.llm import LlmProvider
 from file_server import port
 from tools.utitls import custom_page_styles, display_image, separator, show_struct_data, get_page_count
 
@@ -107,7 +108,7 @@ def import_label_data(dataset, extractor):
         grouped = data.groupby('file_name')
         for file_name, group in grouped:
             # 调用save_one_file_label函数保存数据
-            save_one_file_label(group, dataset, file_name, persist=False)
+            save_one_file_label(group, dataset, file_name, persist=True)
 
         st.success("导入成功")
         st.rerun()
@@ -148,6 +149,7 @@ def load_label_data(dataset_name):
     if os.path.exists(file_path):
         session['label_data'] = pd.read_csv(file_path)
     else:
+        session['label_data'] = None
         logging.info(f"文件 {file_path} 不存在")
 
 

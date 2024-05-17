@@ -70,7 +70,7 @@ def show_struct_data(name, data_list, edit=False, cc=None, styles=None):
                 "key", help="关键要素", width=None, disabled=True
             ),
             "value": st.column_config.TextColumn(
-                "value", help="要素值", width="large"
+                "value", help="N/A: 表示任意值；不输入表示必须为空", width="large"
             ),
         }
     if not styles:

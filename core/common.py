@@ -1,24 +1,13 @@
 import base64
 import hashlib
-import os
+import pandas as pd
+import re
 from enum import Enum
 from mimetypes import guess_type
 
 DATASET_DIR = "data/dataset"
 LABEL_DIR = "data/labels"
-
-
-# 如果要用纯视觉模型，需要在枚举后缀加上'_V'
-class LlmProvider(Enum):
-    AZURE_GPT35 = 7
-    GPT4o = 8
-    GPT4o_V = 9
-    AZURE_GPT4 = 1
-    GPT35 = 3
-    # GPT4 = 2
-    # MOONSHOT = 4
-    # GEMINI_PRO = 5
-    MOCK = 6
+EVALUATE_DIR = "data/evaluate"
 
 
 class OCRProvider(Enum):
@@ -66,3 +55,39 @@ def local_image_to_data_url(image_path):
 
     # Construct the data URL
     return f"data:{mime_type};base64,{base64_encoded_data}"
+
+
+def compare_values(val1, val2):
+    # 自定义比较函数
+    def is_date(string):
+        try:
+            pd.to_datetime(string)
+            return True
+        except ValueError:
+            return False
+
+    def is_amount(string):
+        if isinstance(string, float) or isinstance(string, int):
+            return True
+        return bool(re.match(r'^\d+(\.\d+)?$', string))
+
+    def normalize_string(string):
+        if not isinstance(string, str):
+            string = str(string)
+        return re.sub(r'[\s\W_]+', '', string).lower()
+
+    if is_date(val1) and is_date(val2):
+        # 日期比较
+        date1 = pd.to_datetime(val1, errors='coerce')
+        date2 = pd.to_datetime(val2, errors='coerce')
+        return date1 == date2
+    elif is_amount(val1) and is_amount(val2):
+        # 金额比较
+        amount1 = float(val1) if pd.notnull(val1) else None
+        amount2 = float(val2) if pd.notnull(val2) else None
+        return amount1 == amount2
+    else:
+        # 字符串比较，忽略大小写、空格和标点符号
+        str1 = normalize_string(val1) if pd.notnull(val1) else None
+        str2 = normalize_string(val2) if pd.notnull(val2) else None
+        return str1 == str2

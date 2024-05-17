@@ -15,7 +15,9 @@ tmp/
 venv/
 dist/
 build/
-data/
+data/dataset
+data/evaluate
+data/labels
 
 # 忽略Python编译文件  
 *.pyc  

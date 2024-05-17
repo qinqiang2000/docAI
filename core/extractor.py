@@ -2,9 +2,11 @@ import json
 import logging
 import queue
 import threading
+from time import sleep
 
-from core.common import OCRProvider, DocLanguage, LlmProvider
+from core.common import OCRProvider, DocLanguage
 from core.llm import llm
+from core.llm.llm import LlmProvider
 from core.retrieval.doc_loader import async_load
 
 
@@ -23,7 +25,8 @@ class Extractor:
         return result
 
     def mock_ret(self):
-        mock_data = [{key: "" for key in self.fields.keys()}]
+        mock_data = [{key: "invoice" for key in self.fields.keys()}]
+        sleep(0.1)
         return mock_data
 
     def run(self, file_path, stream_callback,

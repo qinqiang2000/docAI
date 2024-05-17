@@ -74,8 +74,8 @@ st.write("1.上传文件集:")
 uploaded_files = st.file_uploader("Upload files", accept_multiple_files=True, type=['pdf', 'jpg', 'jpeg', 'png'],
                                   label_visibility="collapsed")
 
-c1, c2, _ = st.columns([1, 2, 17])
-c1.write("2.")
+c1, c2, _ = st.columns([1.5, 2, 17])
+c1.write("2. 👉")
 add_button = c2.button("新增")
 if add_button and uploaded_files:
     new_id = str(uuid.uuid4())[:5]
@@ -86,14 +86,14 @@ if add_button and uploaded_files:
 elif add_button and not uploaded_files:
     st.error("Please upload files first!", icon='🚨')
 
-st.write("3. 编辑名字&选择提取器:")
+st.write("3. 编辑name和extractor:")
 column_config = {
     "id": {"disabled": True},
     "name": st.column_config.TextColumn(
-            help="填写数据集名称",
-            max_chars=20,
-            required=True,
-        ),
+        help="填写数据集名称",
+        max_chars=20,
+        required=True,
+    ),
     "extractor":
         st.column_config.SelectboxColumn(
             help="选择提取器",
