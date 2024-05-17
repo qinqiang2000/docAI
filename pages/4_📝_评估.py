@@ -166,6 +166,7 @@ def show_task_result(task):
     print(label_df)
     evl_df = compare_results(label_df, test_df)
 
+    st.markdown(f"##### 任务'{task['name']}'的评估结果")
     show_metrics(evl_df)
     show_test_result(task, evl_df)
 
@@ -275,7 +276,7 @@ task_colum = {
 load_data()
 
 # Display the task table editor
-st.write("评估任务")
+st.write("评估任务列表")
 selection, ds = dataframe_with_selections(st.session_state.task, task_colum)
 
 sel_name = None
