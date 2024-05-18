@@ -12,6 +12,7 @@ saft_folder = ["tmp", "data/dataset"]
 
 port = 8090
 
+
 # _file: st.file_uploader's return value
 def save_uploaded_tmp_file(_file):
     global directory
@@ -42,11 +43,6 @@ def serve_pdf():
         return 'Invalid request'
 
     return send_from_directory(directory, fn, as_attachment=False)
-
-
-@app.route('/')
-def index():
-    return 'Hello, World!'
 
 
 if __name__ == '__main__':
