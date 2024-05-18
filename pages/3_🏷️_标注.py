@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from datetime import datetime
 
 import streamlit as st
 from streamlit import session_state as session
@@ -111,6 +112,7 @@ def import_label_data(dataset, extractor):
             save_one_file_label(group, dataset, file_name, persist=True)
 
         st.success("导入成功")
+        time.sleep(2)
         st.rerun()
 
 
@@ -274,6 +276,12 @@ with expander:
         cols = ['file_name', 'page_no'] + cols
         # 使用新的列顺序重新索引DataFrame
         df_display = session['label_data'].reindex(columns=cols)
-        st.dataframe(df_display, use_container_width=True, hide_index=True)
+        df_display = st.data_editor(df_display, use_container_width=True, hide_index=True)
+        if st.button("保存") and df_display is not None:
+            # 保存label_data到CSV文件
+            csv_file_path = os.path.join(LABEL_DIR, f"{selected_dataset}.csv")
+            session['label_data'] = df_display
+            session['label_data'].to_csv(csv_file_path, index=False)
+            st.success(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]保存数据集[{selected_dataset}]成功")
     else:
         st.write("No label data available.")
