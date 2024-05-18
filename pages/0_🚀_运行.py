@@ -103,7 +103,7 @@ with st.sidebar:
     session["selected_llm_provider"] = LlmProvider[llm_provider]
 
     # 如果是直接用llm，则不显示OCR选项
-    if pure_llm(session["selected_llm_provider"]):
+    if not pure_llm(session["selected_llm_provider"]):
         ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), help="图片类文件才需OCR")
         session["selected_ocr_provider"] = OCRProvider[ocr_provider]
     else:
