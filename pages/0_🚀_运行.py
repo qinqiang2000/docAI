@@ -102,7 +102,7 @@ with st.sidebar:
     llm_provider = st.selectbox("LLM", options=list(LlmProvider.__members__.keys()),help="带_V表示用纯视觉提取，不需先OCR")
     session["selected_llm_provider"] = LlmProvider[llm_provider]
 
-    # 如果session["selected_llm_provider"]以'_V'结尾，则将不能选OCR
+    # 如果是直接用llm，则不显示OCR选项
     if pure_llm(session["selected_llm_provider"]):
         ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), help="图片类文件才需OCR")
         session["selected_ocr_provider"] = OCRProvider[ocr_provider]
