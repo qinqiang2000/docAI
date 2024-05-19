@@ -42,7 +42,7 @@ def handle_file_upload():
 
 def steam_callback(chuck):
     session['text'] += chuck
-    if session["result_placeholder"]:
+    if "result_placeholder" in session:
         session["result_placeholder"].markdown(session['text'])
 
 

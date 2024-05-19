@@ -63,9 +63,9 @@ def async_load(doc_path, queue, provider=OCRProvider.RuiZhen, lang=DocLanguage.c
     for page in pdf.pages:
         text = page.extract_text()
 
-        # todo: 校验字体；经验值常量化
+        # todo: 校验字体；单独成一个判断函数
         # 判断是否扫描件后包含无法解析字体，39是一个经验值
-        if not text or len(text) < 39 or len(page.images) > 5 or cid_percentage(text) > 19:
+        if provider is None or not text or len(text) < 39 or len(page.images) > 5 or cid_percentage(text) > 19:
             logging.info(f"扫描件[{osp.split(doc_path)[1]}]: len(text)[{len(text)}], len(images)[{len(page.images)}]")
             if provider is None:
                 text = save_page_as_image(doc_path, page)

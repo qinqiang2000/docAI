@@ -97,6 +97,12 @@ def extract_json(text) -> List[dict]:
         raise ValueError(f"Failed to parse: {text}")
 
 
+def preprocess_json(json_str):
+    # 正则表达式匹配 JSON 中数值带逗号的部分，并将逗号去掉
+    json_str = re.sub(r'(\d{1,3}(,\d{3})*(\.\d+)?)', lambda x: x.group(0).replace(',', ''), json_str)
+    return json_str
+
+
 # 后处理
 def after_extract(result):
     # 提取字符串中的json数组部分
@@ -107,6 +113,8 @@ def after_extract(result):
     result = re.sub(r'^.*?"Usage": .*? - .*(?=\n|$)', '', result, flags=re.MULTILINE)
     # 处理 JSON 字符串中的算术表达式
     result = remove_illegal(result)
+    # todo: 处理数值类型的，且带千分位的
+    # result = preprocess_json(result)
 
     return extract_json(result)
 
@@ -152,7 +160,8 @@ def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=No
         return LLMOpenAI("gpt-4o", None, True, callback).generate_text(text, sys_prompt)
 
     if provider == LlmProvider.GPT4o_V:
-        return LLMOpenAI("gpt-4o", None, True, callback).generate_text("", sys_prompt, text)
+        file_path = text
+        return LLMOpenAI("gpt-4o", None, True, callback).generate_text("", sys_prompt, file_path)
 
     if provider == LlmProvider.AZURE_GPT4:
         client = AzureOpenAI(

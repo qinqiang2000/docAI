@@ -21,7 +21,7 @@ class Extractor:
         for key, value in self.fields.items():
             result += f"- {key}: {value}\n"
 
-        result = result + "输出要求：以JSON数组输出答案；确保用```json 和 ```标签包装答案。"
+        result = result + """输出要求：以JSON数组输出答案；确保用```json 和 ```标签包装答案。 JSON对象的值都转成字符串返回。 """
         return result
 
     def mock_ret(self):
@@ -47,6 +47,7 @@ class Extractor:
         # 如果ocr_provider是None，则返回的是图片的url
         q = queue.Queue()
         threading.Thread(target=async_load, args=(file_path, q, ocr_provider, lang)).start()
+
         while True:
             page_no, text, total = q.get()  # 从队列获取进度和结果, page_no 从1开始
             if page_no == -1:

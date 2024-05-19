@@ -144,7 +144,6 @@ def on_file_change(filename=None):
 def load_label_data(dataset_name):
     # 已经加载过数据集，不需要再次加载
     if 'dataset_id' in st.session_state and session['dataset_name'] == dataset_name:
-        logging.info(f"数据集 {dataset_name} 已经加载过")
         return
 
     file_path = os.path.join(LABEL_DIR, f"{dataset_name}.csv")

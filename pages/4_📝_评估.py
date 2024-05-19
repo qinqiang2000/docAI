@@ -22,9 +22,12 @@ task_data_file = os.path.join(EVALUATE_DIR, "task.csv")
 
 result_colum_suffix = '__r'
 
+
 # 获取指定目录下的所有 CSV 文件名，不包含扩展名
-def get_csv_files(directory):
-    return [os.path.splitext(f)[0] for f in os.listdir(directory) if f.endswith('.csv')]
+def get_dataset_name():
+    if "data" in st.session_state:
+        df = st.session_state['data']
+        return df['name'].unique()
 
 
 def load_data():
@@ -60,7 +63,7 @@ def dataframe_with_selections(df, colum_cfg):
 
     # Filter the dataframe using the temporary column, then drop the column
     selected_rows = edited_df[edited_df.Select]
-    return selected_rows.drop('Select', axis=1), edited_df
+    return selected_rows.drop('Select', axis=1), edited_df.drop('Select', axis=1)
 
 
 def update_task_time(task):
@@ -68,7 +71,7 @@ def update_task_time(task):
     st.session_state.task.loc[st.session_state.task['name'] == task['name'], 'time'] = current_time
     save_task(st.session_state.task)
 
-@st.cache_data
+
 def get_label_set(name):
     label_file_path = os.path.join(LABEL_DIR, f"{name}.csv")
     if not os.path.exists(label_file_path):
@@ -76,6 +79,7 @@ def get_label_set(name):
         return None
     print(label_file_path)
     return pd.read_csv(label_file_path)
+
 
 # 对测试集files进行处理，返回提取结果
 def run_test_set(files, task, extractor):
@@ -207,10 +211,22 @@ def show_test_result(task, df_result):
     # 做表格的一些特殊处理便于显示 todo: 异常处理
     df_display = df_result.copy()
     tid = get_dataset(task)['id'].values[0]
+
+    # file_name做成文件查看超链接
     df_display['file_name'] = df_result['file_name'].apply(lambda x: f"http://{hostname}:{port}/files?fn=data/dataset/{tid}/{x}")
     cc = {"file_name": st.column_config.LinkColumn(display_text=f"data/dataset/{tid}/(.*?)$")}
+
+    # 添加一个状态列
+    df_display['status'] = df_result.apply(lambda row: all(row[col] for col in df_result.columns if col.endswith('__r')), axis=1)
+    df_display = df_display[['status'] + [col for col in df_display.columns if col != 'status']]
+
+    # 将 True 和 False 替换为 ✔️ 和 ❌
+    comparison_columns = [col for col in df_display.columns if col.endswith('__r')]
+    for col in comparison_columns:
+        df_display[col] = df_display[col].apply(lambda x: '✔️' if x else '❌')
+
     st.write("明细")
-    st.dataframe(df_display, column_config=cc,   hide_index=True, use_container_width=True)
+    st.data_editor(df_display, column_config=cc,   hide_index=True, use_container_width=True, num_rows="dynamic")
 
 
 def show_metrics(evl_df):
@@ -260,10 +276,10 @@ def evaluate(task):
 manager = ExtractorManager()
 
 task_colum = {
-    "Select": st.column_config.CheckboxColumn(label='选择', help="尽量单选", required=True),
+    "Select": st.column_config.CheckboxColumn(label='选择', help="尽量单选", default=False, required=True),
     "name": st.column_config.TextColumn(label='任务名', help="填写任务名称", required=True,),
     "label_set": st.column_config.SelectboxColumn(
-            label='验证集', help="已标注的数据集", width="medium", options=get_csv_files(LABEL_DIR), required=True,),
+            label='验证集', help="已标注的数据集", width="medium", options=get_dataset_name(), required=True,),
     "llm": st.column_config.SelectboxColumn(
             label='LLM', help="已标注的数据集", width="medium", options=list(LlmProvider.__members__.keys()),required=True),
     "ocr": st.column_config.SelectboxColumn(
@@ -288,6 +304,7 @@ c1, c2, c3 = st.columns([1, 1, 10])
 save_button = c1.button("保存")
 if save_button:
     if save_task(ds):
+        print("="*9, "\n", ds)
         st.success(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]保存成功！")
 if not selection.empty:
     task = selection.iloc[-1]
