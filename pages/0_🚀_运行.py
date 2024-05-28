@@ -30,8 +30,9 @@ manager = ExtractorManager()
 
 if 'text' not in session:
     session['text'] = ""
-if 'file_index' not in session:
+if 'file_index' not in session or 'file_id' not in session:
     session['file_index'] = 0
+    session['file_id'] = -1
 
 
 def handle_file_upload():
@@ -71,6 +72,11 @@ def display_process(file):
         st.warning("Unsupported file type")
         return
 
+    # 避免重复处理
+    if file.file_id == session['file_id']:
+        return
+
+    session['file_id'] = file.file_id
     session['text'] = ""  # clear text
     session['data'] = []
 
@@ -125,7 +131,6 @@ col1, col2 = st.columns(cols)
 with col1.container():
     if _files is not None and len(_files) > 0:
         idx = session.get('file_index', 0)
-        logging.info(f"index:{idx}, files: {[file.name for file in _files]}")
         display_process(_files[idx])
 
 column_config = {
