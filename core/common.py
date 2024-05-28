@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import logging
-
 import pandas as pd
 import re
 import difflib
@@ -14,14 +13,14 @@ EVALUATE_DIR = "data/evaluate"
 
 
 class OCRProvider(Enum):
+    RuiZhen_Hack = 2
     RuiZhen = 1
-    Tencent = 2
     MOCK = 6
 
 
 class DocLanguage(Enum):
-    eng = "英语"
     chs = "简体中文"
+    eng = "英语"
     cht = "繁体中文"
     jpn = "日语"
     kor = "韩语"

@@ -2,6 +2,7 @@ import logging
 import os
 import fitz
 from dotenv import load_dotenv
+from core.retrieval.ocr_ruizhen_hack import ruizhen_hack_ocr
 from core.retrieval.ocr_ruizhen import ruizhen_ocr
 from core.common import OCRProvider, DocLanguage, get_file_hash
 
@@ -75,6 +76,10 @@ def ocr(doc_path, page_no, provider=OCRProvider.MOCK, lang=DocLanguage.chs):
         return text
     elif provider == OCRProvider.RuiZhen:
         text = ruizhen_ocr(doc_path, lang)
+    elif provider == OCRProvider.RuiZhen_Hack:
+        text = ruizhen_hack_ocr(doc_path, lang)
+        logging.info(f"using ruizhen_hack: {doc_path}, {lang}: \n {text}")
+
 
     # 将结果写入缓存文件
     if ocr_cache:

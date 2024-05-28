@@ -8,8 +8,11 @@ from core.extractor_manager import ExtractorManager
 # Create an instance of the extractor manager
 manager = ExtractorManager()
 
-st.set_page_config(page_title="提取器配置", page_icon="🔍")
+st.set_page_config(page_title="提取器配置", page_icon="🔍", layout="wide")
 st.title("提取器配置")
+
+if 'delete' not in st.session_state:
+    st.session_state['delete'] = None
 
 
 def save_data(old_name, name, description, fields, rerun=False):
@@ -54,6 +57,7 @@ def on_change():
 def confirm_del(name):
     st.write(f"Are you sure you want to delete {name}?")
     if st.button("Submit"):
+        manager.delete_extractor(name)
         st.session_state['delete'] = name
         st.rerun()
 
@@ -87,10 +91,10 @@ if selected_extractor and not new_extractor and st.session_state.state != "new":
         save_data(selected_extractor, name, description, fields, True)
     elif c2.button("Delete", key="Delete"):
         confirm_del(selected_extractor)
-        if st.session_state['delete'] == selected_extractor and manager.delete_extractor(selected_extractor):
-            st.session_state.state = None
-            st.session_state['delete'] = None
-            st.rerun()
+        # if st.session_state['delete'] == selected_extractor and manager.delete_extractor(selected_extractor):
+        #     st.session_state.state = None
+        #     st.session_state['delete'] = None
+        #     st.rerun()
 
 # Creating or editing a core
 if new_extractor or st.session_state.state == "new":

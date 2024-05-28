@@ -1,3 +1,5 @@
+import logging
+
 import streamlit as st
 from streamlit import session_state as session
 from streamlit_js_eval import streamlit_js_eval
@@ -28,6 +30,8 @@ manager = ExtractorManager()
 
 if 'text' not in session:
     session['text'] = ""
+if 'file_index' not in session:
+    session['file_index'] = 0
 
 
 def handle_file_upload():
@@ -35,9 +39,10 @@ def handle_file_upload():
         session.pop('text', None)  # Safely remove 'text' if it exists, do nothing if it doesn't
         session.pop('data', None)  # Safely remove 'data' if it exists, do nothing if it doesn't
         session.pop('file_index', 0)
-        session.pop('rotated_image', None)
     else:
-        session['file_index'] = 0
+        session['file_index'] = len(session['uploaded_file']) - 1
+
+        session.pop('rotated_image', None)
 
 
 def steam_callback(chuck):
@@ -119,8 +124,8 @@ col1, col2 = st.columns(cols)
 # 左面板，预览PDF或图片
 with col1.container():
     if _files is not None and len(_files) > 0:
-        print([file.name for file in _files])
         idx = session.get('file_index', 0)
+        logging.info(f"index:{idx}, files: {[file.name for file in _files]}")
         display_process(_files[idx])
 
 column_config = {
@@ -136,7 +141,8 @@ column_config = {
 with col2.container(height=height, border=False):  # Adjusted for interface elements
     if 'data' in session:
         for name, data_list in session['data']:
-            show_struct_data(name, data_list)
+            idx = session.get('file_index', 0)
+            show_struct_data(name, data_list, filename=_files[idx].name)
 
         if st.button(f"下一个({session['file_index'] + 1}/{len(_files)})"):
             session['file_index'] = (session['file_index'] + 1) % len(_files)

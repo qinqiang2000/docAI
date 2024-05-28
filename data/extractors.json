@@ -1,15 +1,18 @@
 {
-    "海外发票识别": {
-        "name": "海外发票识别",
-        "description": "你是一个发票识别专家，根据用户给出的OCR的内容，识别出文档类型，提取并记录以下信息。\n注意：\n-识别出常见收票方和开票方的公司名称组成部分，如“Group”, “Corporation”, “Limited”, “Inc.”等。\n-识别并分割紧凑排列的单词，尤其是公司名称，如“WaterWorldInternationalIndustrialLimited”，正确分词为“Water World International Industrial Limited”。\n-确保日期信息有正确空格。\n-如果找不到对应信息，则json的值置为空。\n-\"Bill To\" 或 \"From\" 如果有地址信息，删除它们。\n-\"Bill To\" 或 \"From\" 或 \"ship to\" 如果没正确分词，对他们进行分词。\n-OCR的内容可能存在名词被切断、换行、个别字母识别错误、对应错位等问题，你需要结合上下文语义进行综合判断，以抽取准确的关键信息。比如“Packing List”被识别成\" Packihg\nList\"或\"PACKINGLIST\"。\n-不要自动翻译，保留原文。",
+    "电费单2": {
+        "name": "电费单2",
+        "description": "根据用户给出的OCR后的内容，提取1份或多份的电费关键字段，并以JSON格式输出。\n注意：\n-OCR的结果可能有误，你需要结合上下文语义进行综合判断，以抽取准确的关键信息\n-印刷体[print]和手写体[handwritten]放在了不同的文本段。\n-不要输出算式，要将算式计算后在输出\n- 注意不要提取水费信息\n\n提取json格式：\n{\n      \"eb\":  <电费单明细>\n     [\n        {\n           \"date\": <电费抄表日期。如无明确抄表日期，依据费用最后一天填列>,\n            \"current\": <本期读数>,\n            \"last\": <上期读数>,\n            \"energy charge\": <电损，又叫能源处理费或统源服务费。如果无，则为0>,\n            \"amount\": <明细金额>\n            \"additional fees\": <附加费用，如果无，则为:0>,\n            \"multiplier\": <倍率或倍比；如果无，则为：1>\n         }\n        ...\n      ],\n      \"total amount\": <电费总金额>\n} ",
         "fields": {
-            "Doc Type": "文档类型，请识别出是否\"Invoice\"类型，不是则返回\"other\"。",
-            "Invoice No.": "发票编号，如果没有\"Invoice No.\"，则查找\"Invoice Number\"",
-            "Invoice Date": "发票日期",
-            "Currency": "币种，仅以其官方的三字母代码形式输出。例如：USD, CNY, CAD, AUD, GBP, JPY, DEM, HKD, FRF, CHF, VND等",
-            "Total Amount": "总金额，以数字类型提取。如果没有\"Amount\"，则找\"Total Amount\"或\"Total Value\"或其他类似的词语，找不到置为0。",
-            "Bill To": "收票方，如果没有\"Bill To\"，则找'MESSRS'、'Purchaser' 、'Customer'或其他和'购买方'同义的词语；大小写不敏感",
-            "From": "如果没有\"From\" 信息, 或者不像一个公司名称，则找：'Account Name'、'Beneficiary Name'、底部签名处或标题; 大小写不敏感"
+            "": ""
+        }
+    },
+    "送货单": {
+        "name": "送货单",
+        "description": "从ocr后的文本提取送货单的要素",
+        "fields": {
+            "order": "订单号",
+            "date": "送货时间",
+            "amount": "应收的总金额"
         }
     },
     "水费单": {
@@ -21,23 +24,31 @@
             "Water fee": "优选水费总计、水费小计或类似描述的字段；"
         }
     },
-    "电费单": {
-        "name": "电费单",
-        "description": "根据用户给出的OCR后的内容，识别出是否包含1份或多份的电费的收费通知信息，\n注意：\n-OCR的结果可能有误，你需要结合上下文语义进行综合判断，以抽取准确的关键信息\n-只有一个字段也要输出，不要求全部字段都有\n-不明确的字段不要输出\n-同一张图片，可能同时包含多个水费和电费信息\n-碰到用电的峰/平/谷时段或多个电表，合并成用总的电费信息\n-Energy charge属于电费的一部分，不要分开输出，请放入电费的要素\n-不要输出算式，要将算式计算后在输出\n-仅输出JSON数组，不包含其他文字。",
+    "海外发票识别": {
+        "name": "海外发票识别",
+        "description": "你是一个发票识别专家，根据用户给出的OCR的内容，识别出文档类型，提取并指定信息。\n注意：\n-识别出常见收票方和开票方的公司名称组成部分，如\"Group\", \"Corporation\", \"Limited\", \"Inc.\"，\"CÔNG TY\"等。\n-识别并分割紧凑排列的单词，尤其是公司名称，如\"WaterWorldInternationalIndustrialLimited\"，正确分词为\"Water World International Industrial Limited\"。\n-如果找不到对应信息，则json的值置为空。\n-\"Bill To\" 或 \"From\" 或 \"ship to\" 如果没正确分词，对他们进行分词。\n-OCR的内容可能存在名词被切断、换行、个别字母识别错误、对应错位等问题，你需要结合上下文语义进行综合判断，以抽取准确的关键信息。比如\"Packing List\"被识别成\" Packihg\nList\"或\"PACKINGLIST\"。\n-提取的内容不要自动翻译，保留原文。",
         "fields": {
-            "date": "日期",
-            "current": "本期读数",
-            "last": "上期读数",
-            "amount": "金额"
+            "Doc Type": "文档类型。识别出是否是invoice文件，是的话，返回\"invoice\"，不是则返回\"other\"。标题是Packing List的是other；日本的请求书和越南的发票文件都算\"invoice\"类型",
+            "Invoice No.": "发票编号。如果没有\"Invoice No.\"，则查找\"Invoice Number\" 、\"請求書番号\"、\"No\"。",
+            "Invoice Date": "发票日期。需要转换成\"YYYY-MM-DD\"格式。",
+            "Currency": "币种。仅以其官方的三字母代码形式输出。例如：USD, CNY, CAD, AUD, GBP, JPY, DEM, HKD, FRF, CHF, VND等",
+            "Total Amount": "总金额。以数字类型提取。如果没有\"Amount\"，则找\"Total Amount\"或\"Total Value\"或其他类似的词语，找不到置为0。",
+            "Subtotal": "小计。以数字类型提取，金额中不要包含货币分隔符。存在多个小计时，以“；”隔开，找不到置为0。",
+            "Bill To": "收票方，如果没有\"Bill To\"，则找'MESSRS'、'Purchaser' 、'Customer'或其他和'购买方'同义的词语；",
+            "From": "销售方，如果没有\"From\" 信息, 则按顺序找'ACCOUNT NAME'、'Remit to'、'Beneficiary Name'、底部签名和标题 "
         }
     },
-    "送货单": {
-        "name": "送货单",
-        "description": "从ocr后的文本提取送货单的要素",
+    "电费单1": {
+        "name": "电费单1",
+        "description": "根据用户给出的OCR后的内容，提取1份或多份的电费关键字段。其中印刷体[print]和手写体[handwritten]放在不同的文本段。\n注意：\n-OCR的结果可能有误，你需要结合上下文语义进行综合判断，以抽取准确的关键信息\n-不要输出算式，要将算式计算后在输出\n- 注意不要提取水费信息",
         "fields": {
-            "order": "订单号",
-            "date": "送货时间",
-            "amount": "应收的总金额"
+            "date": "电费抄表日期。如无明确抄表日期，依据费用最后一天填列",
+            "current": "本期读数",
+            "last": "上期读数",
+            "total amount": "电费总金额；不管多少份电费信息，这个值都应该是相同",
+            "energy charge": "电损，又叫能源处理费或统源服务费。这里可能是金额或者比例",
+            "additional fees": "附加费用",
+            "multiplier": "倍率或倍比"
         }
     }
 }

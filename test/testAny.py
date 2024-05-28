@@ -1,23 +1,37 @@
-import streamlit as st
+import json
+import re
 
-st.header('Scrolling Columns')
-
-cols = st.columns(3)
-
-cols[0].write('A short column')
-cols[1].write('Meow' + ' meow'*1000)
-cols[2].write('Another short column')
-
-css='''
-<style>
-    section.main>div {
-        padding-bottom: 1rem;
+text = """
+```json
+[
+    {
+        "Doc Type": "other",
+        "Invoice No.": "",
+        "Invoice Date": "",
+        "Currency": "",
+        "Total Amount": "0",
+        "Subtotal": "0",
+        "Bill To": "Hisense Boardband Multimedia Technologies (HK) Co., Limited",
+        "From": "ORANGETEK CORPORATION"
     }
-    [data-testid="column"]>div>div>div>div>div {
-        overflow: auto;
-        height: 70vh;
-    }
-</style>
-'''
+]
+```
+"""
 
-st.markdown(css, unsafe_allow_html=True)
+# 使用正则表达式移除对象最后一个字段后的逗号
+# 匹配规则：找到逗号后跟着右大括号的位置，并移除该逗号
+text_fixed = re.sub(r',(\s*})', r'\1', text)
+
+# Define the regular expression pattern to match JSON blocks
+pattern = r"```json(.*?)```"
+
+# Find all non-overlapping matches of the pattern in the string
+matches = re.findall(pattern, text_fixed, re.DOTALL)
+
+# Return the list of matched JSON strings, stripping any leading or trailing whitespace
+try:
+    print(matches[0])
+    parse_json = json.loads(matches[0].strip())
+    print(parse_json)
+except Exception:
+    raise ValueError(f"Failed to parse: {text}")

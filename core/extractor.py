@@ -6,7 +6,7 @@ from time import sleep
 
 from core.common import OCRProvider, DocLanguage
 from core.llm import llm
-from core.llm.llm import LlmProvider
+from core.llm.llm import LlmProvider, pure_llm
 from core.retrieval.doc_loader import async_load
 
 
@@ -17,11 +17,17 @@ class Extractor:
         self.fields = fields
 
     def generate_prompt(self):
-        result = self.description + "\n 字段列表：\n"
-        for key, value in self.fields.items():
-            result += f"- {key}: {value}\n"
+        result = self.description
 
-        result = result + """输出要求：以JSON数组输出答案；确保用```json 和 ```标签包装答案。 JSON对象的值都转成字符串返回。 """
+        keys = list(self.fields.keys())
+        if not (len(keys) <= 0 or len(keys[0]) <= 0):  # 默认有一个空行，所以加上第一行的key为''的判断
+            result += "\n 字段列表：\n"
+            for key, value in self.fields.items():
+                result += f"- {key}: {value}\n"
+
+        result = result + f"""\n\n输出要求:
+         - 以JSON数组输出答案；确保用```json 和 ```标签包装答案。 JSON对象的值都转成字符串返回。
+         """
         return result
 
     def mock_ret(self):
@@ -43,6 +49,10 @@ class Extractor:
         logging.info(f"开始处理文件：{file_path}, OCR提供商：{ocr_provider}, 语言：{lang}")
         result = []
 
+        # 纯LLM提取，则将ocr_provider设置为None，以告知doc_loader模块不要ocr
+        if pure_llm(llm_provider):
+            ocr_provider = None
+
         # 异步读取/识别文档的raw text
         # 如果ocr_provider是None，则返回的是图片的url
         q = queue.Queue()
@@ -56,8 +66,9 @@ class Extractor:
             # 提取字段
             if llm_provider == LlmProvider.MOCK:  # 使用mock数据
                 ret = self.mock_ret()
+            elif len(text) < 3:
+                ret = []
             else:
-                # logging.info(f"第{page_no}页：{text}")
                 ret = llm.extract_bill(text, llm_provider, self.generate_prompt(), callback=stream_callback)
             result.append(ret)
 

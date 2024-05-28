@@ -1,5 +1,7 @@
 import json
 import os
+from collections import OrderedDict
+
 from core.extractor import Extractor  # Make sure to import the Extractor class
 
 
@@ -18,7 +20,10 @@ class ExtractorManager:
                     data.items()}
 
     def save_extractor(self, extractor):
+        exits = extractor.name in self.extractors
         self.extractors[extractor.name] = extractor
+        if not exits:
+            self.extractors = OrderedDict(reversed(self.extractors.items()))
         self.save_to_disk()
 
     def delete_extractor(self, name):

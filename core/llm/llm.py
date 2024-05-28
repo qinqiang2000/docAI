@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import time
 import re
@@ -6,9 +7,11 @@ from enum import Enum
 from typing import Any, List
 from openai.lib.azure import AzureOpenAI
 from core.llm.llm_openai import LLMOpenAI
+from groq import Groq
 
 
 class LlmProvider(Enum):
+    LLaMA3_70b_GROQ = 9
     AZURE_GPT35 = 7
     GPT4o = 8
     GPT4o_V = 91
@@ -105,10 +108,13 @@ def preprocess_json(json_str):
 
 # 后处理
 def after_extract(result):
-    # 提取字符串中的json数组部分
-    # result = result[result.find('['):result.rfind(']') + 1]
+    # 使用正则表达式移除对象最后一个字段后的逗号
+    # 匹配规则：找到逗号后跟着右大括号的位置，并移除该逗号
+    result = re.sub(r',(\s*})', r'\1', result)
+
     # 去除 JSON 字符串中的单行注释
     result = re.sub(r'//.*', '', result)
+
     # 去除usage产生的可能错误的JSON字符串
     result = re.sub(r'^.*?"Usage": .*? - .*(?=\n|$)', '', result, flags=re.MULTILINE)
     # 处理 JSON 字符串中的算术表达式
@@ -161,7 +167,12 @@ def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=No
 
     if provider == LlmProvider.GPT4o_V:
         file_path = text
+        logging.info(f"using GPT4o_V to extract file: {file_path}")
         return LLMOpenAI("gpt-4o", None, True, callback).generate_text("", sys_prompt, file_path)
+
+    if provider == LlmProvider.LLaMA3_70b_GROQ:
+        client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
+        return LLMOpenAI("llama3-70b-8192", client, True, callback).generate_text(text, sys_prompt)
 
     if provider == LlmProvider.AZURE_GPT4:
         client = AzureOpenAI(

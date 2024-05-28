@@ -57,7 +57,7 @@ def style_columns(df):
             .map(val_text_color, subset=['value']))
 
 
-def show_struct_data(name, data_list, edit=False, cc=None, styles=None):
+def show_struct_data(name, data_list, edit=False, cc=None, styles=None, filename=None):
     """
     显示提取的结构化数据。
     参数:
@@ -79,6 +79,7 @@ def show_struct_data(name, data_list, edit=False, cc=None, styles=None):
     edited_data = []
     for i, page_data in enumerate(data_list):
         prefix = "" if name is None else f"[{name}]"
+        prefix += "" if filename is None else f"{filename}"
         st.write(prefix, "第", i + 1, "页")
         for j, item in enumerate(page_data):
             df = pd.DataFrame(list(item.items()))

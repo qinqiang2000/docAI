@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 import streamlit as st
@@ -63,7 +64,7 @@ def dataframe_with_selections(df, colum_cfg):
 
     # Filter the dataframe using the temporary column, then drop the column
     selected_rows = edited_df[edited_df.Select]
-    return selected_rows.drop('Select', axis=1), edited_df.drop('Select', axis=1)
+    return selected_rows.drop('Select', axis=1), edited_df
 
 
 def update_task_time(task):
@@ -154,7 +155,9 @@ def save_task_result(task, results_df, test=True):
         filename = f"/{task['name']}_test.csv"
     else:
         filename = f"/{task['name']}_evl.csv"
+
     results_df.to_csv(path + filename, index=False)
+    logging.info(f"Successfully save task[{task}] result to {filename}.")
 
 
 def show_task_result(task):
@@ -167,7 +170,6 @@ def show_task_result(task):
     test_df = pd.read_csv(test_file)
 
     label_df = get_label_set(task['label_set'])
-    print(label_df)
     evl_df = compare_results(label_df, test_df)
 
     st.markdown(f"##### 任务'{task['name']}'的评估结果")
@@ -175,11 +177,12 @@ def show_task_result(task):
     show_test_result(task, evl_df)
 
 
-def compare_results(label_df, result_df):
-    # 合并两个 DataFrame，依据列 'a' 和 'b' 进行左连接
-    df = pd.merge(label_df, result_df, on=['file_name', 'page_no'], how='left', suffixes=('', '_t'))
+def compare_results(df_label, df_test):
+    # 仅保留label_df的列
+    df_right = df_test[df_label.columns]
 
-    columns = df.columns
+    # 合并两个 DataFrame，依据列 'a' 和 'b' 进行左连接
+    df = pd.merge(df_label, df_right, on=['file_name', 'page_no'], how='left', suffixes=('', '_t'))
 
     # 提取 file_name 和 page_no 列
     file_name_col = df['file_name']
@@ -189,7 +192,7 @@ def compare_results(label_df, result_df):
     df_result = pd.DataFrame()
 
     # 按照原始顺序创建新的列顺序，并生成比较结果列
-    for column in columns:
+    for column in df.columns:
         if column in ['file_name', 'page_no']:
             continue
         if '_t' not in column:
