@@ -8,6 +8,7 @@
 *.doc
 *.db
 .env
+.DS_Store
 
 # 忽略目标目录  
 target/  
