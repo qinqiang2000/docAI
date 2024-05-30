@@ -1,21 +1,21 @@
-import json
 import logging
 import os
 import time
 import re
 from enum import Enum
-from typing import Any, List
 from openai.lib.azure import AzureOpenAI
+
+from core.common import extract_json
 from core.llm.llm_openai import LLMOpenAI
 from groq import Groq
 
 
 class LlmProvider(Enum):
     LLaMA3_70b_GROQ = 9
-    AZURE_GPT35 = 7
+    AZURE_GPT4o = 1
     GPT4o = 8
+    AZURE_GPT35 = 7
     GPT4o_V = 91
-    AZURE_GPT4 = 1
     GPT35 = 3
     # GPT4 = 2
     # MOONSHOT = 4
@@ -57,47 +57,6 @@ def remove_illegal(json_str):
     updated_string = pattern.sub(eval_expression, json_str)
 
     return updated_string
-
-
-def flatten_if_single_nested_array(arr: List[Any]) -> List[Any]:
-    """
-    Flatten an array if it consists of a single nested array.
-
-    Parameters:
-        arr (List[Any]): The potentially nested array to flatten.
-
-    Returns:
-        List[Any]: A flattened version of the input array if the top level contains
-                   only a single nested array, otherwise the original array.
-    """
-    # Check if the list contains exactly one element and that element is a list
-    while len(arr) == 1 and isinstance(arr[0], list):
-        arr = arr[0]
-    return arr
-
-
-# Custom parser
-def extract_json(text) -> List[dict]:
-    """Extracts JSON content from a string where JSON is embedded between ```json and ``` tags.
-
-    Parameters:
-        text (str): The text containing the JSON content.
-
-    Returns:
-        list: A list of extracted JSON strings.
-    """
-    # Define the regular expression pattern to match JSON blocks
-    pattern = r"```json(.*?)```"
-
-    # Find all non-overlapping matches of the pattern in the string
-    matches = re.findall(pattern, text, re.DOTALL)
-
-    # Return the list of matched JSON strings, stripping any leading or trailing whitespace
-    try:
-        parse_json = [json.loads(match.strip()) for match in matches]
-        return flatten_if_single_nested_array(parse_json)
-    except Exception:
-        raise ValueError(f"Failed to parse: {text}")
 
 
 def preprocess_json(json_str):
@@ -157,7 +116,7 @@ def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=No
     """
 
     # base_prompt = unify_prompt(get_prompt_template())
-    print("使用prompt template：\n", sys_prompt)
+    logging.info(f"llm={provider}, [prompt + text]：\n{sys_prompt}\n{text}")
 
     if provider == LlmProvider.GPT35:
         return LLMOpenAI("gpt-3.5-turbo", None, True, callback).generate_text(text, sys_prompt)
@@ -174,7 +133,7 @@ def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=No
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
         return LLMOpenAI("llama3-70b-8192", client, True, callback).generate_text(text, sys_prompt)
 
-    if provider == LlmProvider.AZURE_GPT4:
+    if provider == LlmProvider.AZURE_GPT4o:
         client = AzureOpenAI(
             api_key=os.environ['AZURE_OPENAI_API_KEY'],
             api_version=os.environ['OPENAI_API_VERSION'],

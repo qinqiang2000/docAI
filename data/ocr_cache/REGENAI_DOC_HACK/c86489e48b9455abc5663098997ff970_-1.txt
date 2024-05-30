@@ -1,0 +1,19 @@
+
+Li Jing WenRoom Number1511
+Arrival Date2023/6/16 23:43
+Departure Date2023/6/17 8:43
+Number of Adults and Children1/0
+Room Rate
+Rate PlanCORL32
+Frequent Flyer
+Hilton Honors
+Folio No./Check No.767816A
+*** INFORMATION BILL ***
+Confirmation Number
+HILTON DALIAN017/06/2023 00:00:00
+Date	Transaction Description	Cashier ID	Transaction ID	Debit	Credit	Balance
+2023/6/16 ROOM & BREAKFAST RATE LIYU 4014626 600
+
+Balance600
+Page:1
+¿

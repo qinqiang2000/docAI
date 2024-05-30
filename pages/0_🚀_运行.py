@@ -1,10 +1,11 @@
+import json
 import logging
 
 import streamlit as st
 from streamlit import session_state as session
 from streamlit_js_eval import streamlit_js_eval
 from core.extractor_manager import ExtractorManager
-from core.common import OCRProvider, DocLanguage
+from core.common import OCRProvider, DocLanguage, extract_json
 from core.llm.llm import LlmProvider, pure_llm
 from file_server import save_uploaded_tmp_file, port
 from tools.utitls import custom_page_styles, show_struct_data, display_image
@@ -30,8 +31,9 @@ manager = ExtractorManager()
 
 if 'text' not in session:
     session['text'] = ""
-if 'file_index' not in session or 'file_id' not in session:
+if 'file_index' not in session:
     session['file_index'] = 0
+if 'file_id' not in session:
     session['file_id'] = -1
 
 
@@ -43,7 +45,7 @@ def handle_file_upload():
     else:
         session['file_index'] = len(session['uploaded_file']) - 1
 
-        session.pop('rotated_image', None)
+    session.pop('rotated_image', None)
 
 
 def steam_callback(chuck):
@@ -124,13 +126,17 @@ with st.sidebar:
                                 help="部分OCR模块需指定语言；混合语言者，选占比最多的语种")
     session["selected_lang"] = next(e for e in DocLanguage if e.value == doc_language)
 
+    if st.button("运行"):
+        session.pop('file_id', -1)
+        st.rerun()
+
 cols = [0.65, 0.35]
 col1, col2 = st.columns(cols)
 
 # 左面板，预览PDF或图片
 with col1.container():
     if _files is not None and len(_files) > 0:
-        idx = session.get('file_index', 0)
+        idx = session['file_index']
         display_process(_files[idx])
 
 column_config = {
@@ -146,14 +152,20 @@ column_config = {
 with col2.container(height=height, border=False):  # Adjusted for interface elements
     if 'data' in session:
         for name, data_list in session['data']:
-            idx = session.get('file_index', 0)
+            idx = session['file_index']
             show_struct_data(name, data_list, filename=_files[idx].name)
 
         if st.button(f"下一个({session['file_index'] + 1}/{len(_files)})"):
             session['file_index'] = (session['file_index'] + 1) % len(_files)
             session.pop('rotated_image', None)
+            session.pop('file_id', -1)
             st.rerun()
 
     # 流式呈现过程数据
     session["result_placeholder"] = st.empty()
-    session["result_placeholder"].write(session['text'])
+    try:
+        json_ = extract_json(session['text'])
+        session["result_placeholder"].write(json_)
+    except ValueError:
+        session["result_placeholder"].write(session['text'])
+

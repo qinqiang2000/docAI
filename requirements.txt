@@ -1,10 +1,13 @@
 streamlit
 streamlit_elements
 streamlit_js_eval
+streamlit-ace
 pdfplumber
+json5
 PyMuPDF==1.23.8
 python-dotenv
 openai
 flask
 pandas
 openpyxl
+python-docx

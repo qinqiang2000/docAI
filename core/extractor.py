@@ -16,7 +16,7 @@ class Extractor:
         self.description = description
         self.fields = fields
 
-    def generate_prompt(self):
+    def generate_prompt_(self):
         result = self.description
 
         keys = list(self.fields.keys())
@@ -30,8 +30,16 @@ class Extractor:
          """
         return result
 
+    def generate_prompt(self):
+        result = self.description
+        result = result + "\n 输出json格式：\n" + self.fields
+        result = result + f"""\n\n输出要求:
+         - 以JSON数组输出答案；确保用```json 和 ```标签包装答案。 JSON对象的值都转成字符串返回。
+         """
+        return result
+
     def mock_ret(self):
-        mock_data = [{key: "invoice" for key in self.fields.keys()}]
+        mock_data = [{"k1": "v1"}, {"k2": "v2"}]
         sleep(0.1)
         return mock_data
 

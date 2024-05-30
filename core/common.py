@@ -1,6 +1,9 @@
 import base64
 import hashlib
+import json
 import logging
+from typing import List, Any
+
 import pandas as pd
 import re
 import difflib
@@ -13,7 +16,7 @@ EVALUATE_DIR = "data/evaluate"
 
 
 class OCRProvider(Enum):
-    RuiZhen_Hack = 2
+    REGENAI_DOC_HACK = 2
     RuiZhen = 1
     MOCK = 6
 
@@ -33,6 +36,47 @@ class DocLanguage(Enum):
     nld = "荷兰语"
     ita = "意大利语"
     por = "葡萄牙语"
+
+
+def flatten_if_single_nested_array(arr: List[Any]) -> List[Any]:
+    """
+    Flatten an array if it consists of a single nested array.
+
+    Parameters:
+        arr (List[Any]): The potentially nested array to flatten.
+
+    Returns:
+        List[Any]: A flattened version of the input array if the top level contains
+                   only a single nested array, otherwise the original array.
+    """
+    # Check if the list contains exactly one element and that element is a list
+    while len(arr) == 1 and isinstance(arr[0], list):
+        arr = arr[0]
+    return arr
+
+
+# Custom parser
+def extract_json(text) -> List[dict]:
+    """Extracts JSON content from a string where JSON is embedded between ```json and ``` tags.
+
+    Parameters:
+        text (str): The text containing the JSON content.
+
+    Returns:
+        list: A list of extracted JSON strings.
+    """
+    # Define the regular expression pattern to match JSON blocks
+    pattern = r"```json(.*?)```"
+
+    # Find all non-overlapping matches of the pattern in the string
+    matches = re.findall(pattern, text, re.DOTALL)
+
+    # Return the list of matched JSON strings, stripping any leading or trailing whitespace
+    try:
+        parse_json = [json.loads(match.strip()) for match in matches]
+        return flatten_if_single_nested_array(parse_json)
+    except Exception:
+        raise ValueError(f"Failed to parse: {text}")
 
 
 def get_file_hash(filepath):

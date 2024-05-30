@@ -1,0 +1,78 @@
+BEOEEINC
+DELIVERY NOTE NUMBER
+JREFZT
+INVOICE NUMBER
+Boeing Distribution Services Inc.
+JREFZT
+Tel:+1.305.925.2600· Fax:+1.305.507.7191·www.BoeingDistribution.com
+Remit to Address: 88289 Expedite Way, Chicago, IL 60695-0001
+PAGE 2 OF 3
+Wire Instructions: Boeing Distribution Services Inc.· JPMorgan Chase Bank New York
+ABA:021000021 · Account:304639273·SWIFT: CHASUS33·CHIP UID: 0002
+SOLD TO:
+SHIP TO:
+037890
+TAECO /TAIKOO XIAMEN AIRCRAFT
+TAECO /TAIKOO XIAMEN AIRCRAFT
+GAOQI INT'L AIRPORT
+GAOQI INT'L AIRPORT
+XIAMEN 361006
+XIAMEN 361006
+PEOPLE'S REPUBLIC OF CHINA
+PEOPLE'S REPUBLIC OF CHINA
+ORDER NO.
+DATE
+SHIP VIA
+TERMS
+SHIPPING TERMS
+XP01900312/R
+03/18/19
+PICK UP - NOTIFY
+NET 45
+EXW-SELLER'S WHSE
+ITEM
+QUANTITY
+PART NUMBER AND DESCRIPTION
+PRICE
+UNIT
+BACK ORDER
+SHIPPED
+AMOUNT
+NO.
+ORDERED
+INSERT,HLCL
+"""4-40 WIRE INSERT, TANGLESS, SELF-LOCK, DRY
+LUBE"""
+ECCN :EAR99
+TARIFF: 7326.90.8688
+MFR: EMHART / STANLEY
+CTRL#
+:2019B29007
+LOT#
+:1343112
+LOT QTY: 5500
+These items are controlled by the U.S. Government
+and authorized for export only to the country
+of ultimate destination for use by the ultimate consignee
+or end-user(s) herein identified.
+They may not be resold, transferred, or otherwise disposed of,
+to any other country or to any person other than the
+authorized ultimate consignee or end-user(s),
+either in their original form or after being incorporated
+into other items, without first obtaining approval from the
+U.S. government or as otherwise authorized by
+U.S. law and regulations.
+Ultimate Destination
+TAECO /TAIKOO XIAMEN AIRCRAFT
+GAOQI INT'L AIRPORT
+XIAMEN
+361006
+PEOPLE'S REPUBLIC OF CHINA
+***CONTINUED***
+MATERIAL TO BE RETURNED MUST HAVE PRIOR AUTHORIZATION BY BOEING DISTRIBUTION SERVICES INC.
+ALL ITEMS ARE SUBJECT TO A 100% RESTOCKING CHARGE.
+SHIPPED FROM: 10000 N W 15TH TERRACE, MIAMI, FL 33172
+ORIGINAL COPY
+BY RECEIVING DELIVERY OF THE ITEMS COVERED BY THIS INVOICE, BUYER AGREES TO THE TERMS AND CONDITIONS OF SALE AT:
+https://www.boeingdistribution.com/content/conditions-sale
+Form 200 (PDF) Rev 1.0

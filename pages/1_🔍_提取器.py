@@ -1,6 +1,10 @@
+import json5
+import logging
 import streamlit as st
 import pandas as pd
 import time
+
+from streamlit_ace import st_ace
 
 from core.extractor import Extractor
 from core.extractor_manager import ExtractorManager
@@ -20,7 +24,14 @@ def save_data(old_name, name, description, fields, rerun=False):
         st.error("Both '名字' and '描述' must be filled out.")
     else:
         fields_dict = {row.Field: row.Description for row in fields.itertuples(index=False)}
-        extractor = Extractor(name, description, fields_dict)  # Create an Extractor instance
+        save_schema_data(old_name, name, description, fields_dict, rerun)
+
+
+def save_schema_data(old_name, name, description, schema, rerun=False):
+    if not name or not description:
+        st.error("Both '名字' and '描述' must be filled out.")
+    else:
+        extractor = Extractor(name, description, schema)  # Create an Extractor instance
         manager.save_extractor(extractor)  # Assuming save_extractor accepts an Extractor instance
         st.success(f"Extractor '{name}' has been saved!")
 
@@ -53,6 +64,7 @@ def load_data(extractor=None):
 def on_change():
     st.session_state.state = None
 
+
 @st.experimental_dialog("确认删除？")
 def confirm_del(name):
     st.write(f"Are you sure you want to delete {name}?")
@@ -60,6 +72,19 @@ def confirm_del(name):
         manager.delete_extractor(name)
         st.session_state['delete'] = name
         st.rerun()
+
+
+def show_schema(fields=None):
+    formatted = "[\n]"
+    if fields:
+        formatted = fields
+
+    content = st_ace(
+        value=formatted, auto_update=True,
+        language="javascript",
+        font_size=13, tab_size=2,)
+
+    return content
 
 
 if 'state' not in st.session_state:
@@ -80,21 +105,25 @@ with st.sidebar:
 if selected_extractor and not new_extractor and st.session_state.state != "new":
     st.session_state.state = "view"
     extractor = manager.get_extractor(selected_extractor)
-    name = st.text_input("名字", value=selected_extractor, key="view_name")
-    description = st.text_area("描述", value=extractor.description, key="view_description", height=300)
-    _fields = load_data(extractor)
-    fields = st.data_editor(data=_fields, column_config={"Field": "字段", "Description": "描述"},
-                            num_rows="dynamic", use_container_width=True)
 
+    name = st.text_input("名字", value=selected_extractor, key="view_name")
+
+    description = st.text_area("描述", value=extractor.description, key="view_description", height=300)
+
+    # _fields = load_data(extractor)
+    # fields = st.data_editor(data=_fields, column_config={"Field": "字段", "Description": "描述"},
+    #                         num_rows="dynamic", use_container_width=True)
+
+    schema = show_schema(extractor.fields)
+
+    # 操作
     c1, c2, c3, _ = st.columns([1, 1, 1, 5])
     if c1.button("Save"):
-        save_data(selected_extractor, name, description, fields, True)
+        # save_data(selected_extractor, name, description, fields, True)
+        save_schema_data(None, name, description, schema, rerun=True)
+
     elif c2.button("Delete", key="Delete"):
         confirm_del(selected_extractor)
-        # if st.session_state['delete'] == selected_extractor and manager.delete_extractor(selected_extractor):
-        #     st.session_state.state = None
-        #     st.session_state['delete'] = None
-        #     st.rerun()
 
 # Creating or editing a core
 if new_extractor or st.session_state.state == "new":
@@ -102,11 +131,14 @@ if new_extractor or st.session_state.state == "new":
     name = st.text_input("名字", key="name")
     description = st.text_area("描述", key="description", height=200)
 
-    st.write("字段列表")
-    fields = st.data_editor(data=load_data(), column_config={
-        "Field": "字段",
-        "Description": "描述",
-    }, num_rows="dynamic", use_container_width=True)
+    # st.write("字段列表")
+    # fields = st.data_editor(data=load_data(), column_config={
+    #     "Field": "字段",
+    #     "Description": "描述",
+    # }, num_rows="dynamic", use_container_width=True)
+
+    schema = show_schema()
 
     if st.button("Save"):
-        save_data(None, name, description, fields, rerun=True)
+        # save_data(None, name, description, fields, rerun=True)
+        save_schema_data(None, name, description, schema, rerun=True)

@@ -1,0 +1,92 @@
+G.M.I. TECHNOLOGY INC
+Date: 07-JUL-23
+9/F., Shatin Industrial Building,
+Page: 1/1
+22-28 Wo Shui Street, Fotan,
+Invoice:IN2-2370104
+Shatin, N.T.
+DN No :SA2-2370104
+TEL:852-2343-2868
+Ref: IF2-2370101
+FAX:852-2343-9194
+Contact:Wang, Carl 王玺林
+INVOICE
+Bill To:
+Ship To:
+Hisense Broadband Multimedia Technologies (HK) Co., Limited
+青旅思捷物流有限公司
+Rooms 3101-3105 Singga Commercial Centrev 148 Connaught Road West
+香港荃灣横窩仔街43-57號永得利中心六樓
+Hong Kong
+Customer Code:22220
+ATTN:
+TEL:
+Shipment From HONG KONG To HONG KONG
+FAX:
+PRICE TERM:FCA
+入仓号:ZGD-505687
+PAYMENT: NET 60 DAYS
+Bank's Acceptance Bill:
+Country of manufacture : TAIWAN,CHINA
+Unit Price
+Amount
+NO
+Brand
+Description
+Unit
+Q'ty
+(USD)
+(USD)
+1
+REALTEK
+RTL9617C-VW-CG
+PCS
+150 PCS
+7
+1,050.00
+10G PON ONU GATEWAY
+PROCESSOR (WIFI ONLY)
+PO:5970023616
+PART NO:3011175701
+2
+REALTEK
+RTL8832CR-CG
+PCS
+150 PCS
+3.5
+525.00
+WIFI
+802.1lax,DB,2T2R,PCIe
+Interface,QFN-76
+PO:5970023617
+PART NO:3011175401
+3
+REALTEK
+RTL8192XBR-CG
+PCS
+150 PCS
+2.5
+375.00
+WIFI
+802.11ax,SB,2T2R,PCIe
+Interface,QFN-56
+PO:5970023617
+PART NO:3011175501
+TOTAL
+450 PCS
+USD
+1,950.00
+VVVVVVVVV
+VVVVVVVV
+Exchange Rate
+7.84
+HKD
+15,288.00
+VVVVVVVVVV
+VVVVVVVV
+Confirmed and Received by:
+For and on behalf of
+G.M.I. TREHNOTOGY INC
+Please sign & chop
+Authorized Signature
+基

@@ -1,0 +1,20 @@
+
+中骏商管缴费书
+打印日期:2024-04-11
+PAYMENT NOTE
+基本信息:
+项目名称:(Mall Name)	西长安世界城	合同编号:(Contract Number)	SYXCA-ZS-HT00821005
+品牌名称:(Brand)	KFC 肯德基	铺位编号:(Shop No)	M106
+租户名称:(Tenant Name)	北京肯德基有限公司	联系人:(Contact Person)	
+联系地址:(Contact Address)	
+
+账单明细:
+费项类型(Cost Name)	缴款时间(Pay Date)	账单期间(Bill Period)	应交金额(RMB)
+电费	2024-04-15	2024.03.01至2024.03.31	17,362.00
+金额合计(RMB):	17,362.00
+金额合计(大写):	壹万柒仟叁佰陆拾贰元整
+备注(Remark):	
+
+缴费账户信息:
+开户名:(Account Name)	北京天峰中骏商业管理有限公司
+开户行:(Bank)	工商银行北京龙泉支行	账号:(Account No)	0200002019200281391

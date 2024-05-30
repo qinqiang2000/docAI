@@ -1,0 +1,21 @@
+
+X
+业有限公司
+结账单 Guest Folio
+如意鎏理酒店宾客账单
+0ROSY LIUJINGGUEST BILL
+HoTes & REsORTs
+宾客姓名Name:张佳旭账单号 Receipt No.:22961
+房号Room No.: 1115预订号 Reservation :2305190016
+团队名称 Group:人数No. Of people : 1
+公司名称 Company:兰州万达城开发有限公司入住日期Arrival Date :2023/05/19 15:14
+会员卡 VIP No.:退房日期 Departure :2023/05/20 14:00
+收银号 Cashier:LJFOLL页号PAGE:1/1
+日期	账目说明	备注	消费CNY	已付CNY
+Date	Description	Remarks	Consumption	Payment
+
+2023/05/19[1115]夜审房费C-C2张佳旭419.000.00
+Total 总计:CNY ¥419.000.00
+Balance余额:CNY¥419.00
+兰顺体嬉意鞋玺直塑基酣店
+CHARGE TO 转账至:
