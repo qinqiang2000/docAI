@@ -216,14 +216,15 @@ with st.sidebar:
                                     help="自动标注且需要OCR时，选择")
         session["selected_lang"] = next(e for e in DocLanguage if e.value == doc_language)
 
-    if selected_dataset:
-        if st.button("导入", help="从外部导入已标注的数据"):
-            import_label_data(selected_dataset, manager.get_extractor(session['extractor']))
+    # if selected_dataset:
+    #     if st.button("导入", help="从外部导入已标注的数据"):
+    #         import_label_data(selected_dataset, manager.get_extractor(session['extractor']))
 
 # --- 主区域 ---
 col1, col2 = st.columns([0.65, 0.35])
 if not session['selectbox_file']:
     st.warning("👈请从左侧选择要标注的文件")
+
 # 主区域的左面板
 with col1.container():
     if 'selectbox_file' in st.session_state and session['selectbox_file']:
@@ -241,18 +242,19 @@ with col1.container():
 
 # 主区域的右面板
 with col2.container():
-    if session['selectbox_file']:
+    if session['selectbox_file'] and 'labelling_data' in st.session_state:
         st.write("正在标注: ", session['selectbox_file'])
         st.caption("注：以json数组格式标注")
 
-    if 'labelling_data' in st.session_state:
         _files = session['file_list']
         i = _files.index(session['selectbox_file'])
 
         labeled_data = show_label_json(session['labelling_data'], "json")
         msg_placeholder = st.empty()
 
-        if st.button(f"下一个({i + 1}/{len(_files)})"):
+        if st.button(f"下一个({i + 1}/{len(_files)})", help="自动保存当前数据"):
+            save_manual_labels(labeled_data, session['selectbox_file'], selected_dataset)
+
             i = (i + 1) % len(_files)
             session['file_index'] = i
             process_file(_files[i])
@@ -281,7 +283,7 @@ with expander:
         # 使用新的列顺序重新索引DataFrame
         df_display = session['label_data'].reindex(columns=cols)
 
-        # df_display = st.data_editor(df_display, use_container_width=True, hide_index=True)
+        df_display = st.data_editor(df_display, use_container_width=True, hide_index=True)
         if st.button("保存") and df_display is not None:
             # 保存label_data到CSV文件
             csv_file_path = os.path.join(LABEL_DIR, f"{selected_dataset}.csv")

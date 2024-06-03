@@ -57,7 +57,6 @@ class LLMOpenAI:
                 if chunk.choices[0].delta.content is None:
                     continue
 
-                print(chunk.choices[0].delta.content, end='', flush=True)
                 if self.callback:
                     self.callback(chunk.choices[0].delta.content)
                 result += chunk.choices[0].delta.content
