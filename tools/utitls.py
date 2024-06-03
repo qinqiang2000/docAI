@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -5,6 +6,7 @@ import streamlit as st
 from PIL import Image
 import pandas as pd
 import fitz
+from streamlit_ace import st_ace
 
 separator = "|"
 
@@ -30,20 +32,21 @@ def get_page_count(file_path):
 def display_image(file):
     image = Image.open(file)
     if 'rotated_image' not in st.session_state:
-        st.session_state['rotated_image'] = image
+        st.session_state['rotated_image'] = [image, file]
+    elif st.session_state['rotated_image'][1] != file:
+        st.session_state['rotated_image'] = [image, file]
 
-    st.image(st.session_state['rotated_image'], use_column_width=True)
+    st.image(st.session_state['rotated_image'][0], use_column_width=True)
 
     _, col1, col2, _ = st.columns([3 / 8, 1 / 8, 1 / 8, 3 / 8])
     with col1:
         if st.button("↩️"):
-            st.session_state['rotated_image'] = st.session_state['rotated_image'].rotate(90, expand=True)
+            st.session_state['rotated_image'][0] = st.session_state['rotated_image'][0].rotate(90, expand=True)
             st.rerun()
     with col2:
         if st.button("↪️"):
-            st.session_state['rotated_image'] = st.session_state['rotated_image'].rotate(-90, expand=True)
+            st.session_state['rotated_image'][0] = st.session_state['rotated_image'][0].rotate(-90, expand=True)
             st.rerun()
-
 
 # 定制表格列style
 def style_columns(df):
@@ -56,6 +59,20 @@ def style_columns(df):
     return (df.style
             .map(key_text_color, subset=['key'])  # Using .map for column-wise styling
             .map(val_text_color, subset=['value']))
+
+
+# fields必须是二维数组
+def show_label_json(fields, lang="javascript"):
+    edited_data = []
+    for i, page_data in enumerate(fields):
+        st.write("第", i + 1, "页")
+        formatted = json.dumps(page_data, indent=2, ensure_ascii=False)
+        content = st_ace(
+            value=formatted, auto_update=True,
+            language=lang,
+            font_size=13, tab_size=2, )
+        edited_data.append(content)
+    return edited_data
 
 
 def show_struct_data(name, data_list, edit=False, cc=None, styles=None, filename=None):

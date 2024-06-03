@@ -150,10 +150,11 @@ column_config = {
 
 # 右面板，呈现数据
 with col2.container(height=height, border=False):  # Adjusted for interface elements
-    if 'data' in session:
+    if 'data' in session and session['data']:
         for name, data_list in session['data']:
             idx = session['file_index']
-            show_struct_data(name, data_list, filename=_files[idx].name)
+            if _files and len(_files) > 0:
+                show_struct_data(name, data_list, filename=_files[idx].name)
 
         if st.button(f"下一个({session['file_index'] + 1}/{len(_files)})"):
             session['file_index'] = (session['file_index'] + 1) % len(_files)

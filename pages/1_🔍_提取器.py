@@ -65,6 +65,19 @@ def on_change():
     st.session_state.state = None
 
 
+def show_json(fields=None, lang="javascript"):
+    formatted = "[\n]"
+    if fields:
+        formatted = fields
+
+    content = st_ace(
+        value=formatted, auto_update=True,
+        language=lang,
+        font_size=13, tab_size=2,)
+
+    return content
+
+
 @st.experimental_dialog("确认删除？")
 def confirm_del(name):
     st.write(f"Are you sure you want to delete {name}?")
@@ -72,19 +85,6 @@ def confirm_del(name):
         manager.delete_extractor(name)
         st.session_state['delete'] = name
         st.rerun()
-
-
-def show_schema(fields=None):
-    formatted = "[\n]"
-    if fields:
-        formatted = fields
-
-    content = st_ace(
-        value=formatted, auto_update=True,
-        language="javascript",
-        font_size=13, tab_size=2,)
-
-    return content
 
 
 if 'state' not in st.session_state:
@@ -114,7 +114,7 @@ if selected_extractor and not new_extractor and st.session_state.state != "new":
     # fields = st.data_editor(data=_fields, column_config={"Field": "字段", "Description": "描述"},
     #                         num_rows="dynamic", use_container_width=True)
 
-    schema = show_schema(extractor.fields)
+    schema = show_json(extractor.fields)
 
     # 操作
     c1, c2, c3, _ = st.columns([1, 1, 1, 5])
@@ -137,7 +137,7 @@ if new_extractor or st.session_state.state == "new":
     #     "Description": "描述",
     # }, num_rows="dynamic", use_container_width=True)
 
-    schema = show_schema()
+    schema = show_json()
 
     if st.button("Save"):
         # save_data(None, name, description, fields, rerun=True)

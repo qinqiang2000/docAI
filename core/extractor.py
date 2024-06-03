@@ -1,6 +1,7 @@
 import json
 import logging
 import queue
+import re
 import threading
 from time import sleep
 
@@ -10,25 +11,37 @@ from core.llm.llm import LlmProvider, pure_llm
 from core.retrieval.doc_loader import async_load
 
 
+def clean_js_to_json(js_code):
+    try:
+        # Remove single line comments
+        js_code = re.sub(r'//.*', '', js_code)
+        # Remove multi-line comments
+        js_code = re.sub(r'/\*.*?\*/', '', js_code, flags=re.DOTALL)
+        # Replace values with empty strings
+        js_code = re.sub(r'":\s*".*?"', '": ""', js_code)
+        # Remove trailing commas
+        js_code = re.sub(r',\s*([}\]])', r'\1', js_code)
+
+        # Try to parse JSON
+        parsed_json = json.loads(js_code)
+
+        # Remove empty objects from the top-level array
+        if isinstance(parsed_json, list):
+            parsed_json = [item for item in parsed_json if item]
+        return parsed_json
+    except json.JSONDecodeError as e:
+        print(f"JSON Decode Error: {e}")
+        return []
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return []
+
+
 class Extractor:
     def __init__(self, name, description, fields):
         self.name = name
         self.description = description
         self.fields = fields
-
-    def generate_prompt_(self):
-        result = self.description
-
-        keys = list(self.fields.keys())
-        if not (len(keys) <= 0 or len(keys[0]) <= 0):  # 默认有一个空行，所以加上第一行的key为''的判断
-            result += "\n 字段列表：\n"
-            for key, value in self.fields.items():
-                result += f"- {key}: {value}\n"
-
-        result = result + f"""\n\n输出要求:
-         - 以JSON数组输出答案；确保用```json 和 ```标签包装答案。 JSON对象的值都转成字符串返回。
-         """
-        return result
 
     def generate_prompt(self):
         result = self.description
@@ -39,9 +52,9 @@ class Extractor:
         return result
 
     def mock_ret(self):
-        mock_data = [{"k1": "v1"}, {"k2": "v2"}]
+        cleaned_json = clean_js_to_json(self.fields)
         sleep(0.1)
-        return mock_data
+        return cleaned_json
 
     def run(self, file_path, stream_callback,
             llm_provider=LlmProvider.AZURE_GPT35, ocr_provider=OCRProvider.RuiZhen, lang=DocLanguage.chs):
