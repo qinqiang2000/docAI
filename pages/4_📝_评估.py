@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 
@@ -7,7 +8,8 @@ import os
 
 from streamlit_js_eval import streamlit_js_eval
 
-from core.common import EVALUATE_DIR, OCRProvider, LABEL_DIR, DATASET_DIR, DocLanguage, compare_values
+from core.common import EVALUATE_DIR, OCRProvider, LABEL_DIR, DATASET_DIR, DocLanguage
+from core.evaluator.json_custom_evl import evaluate_json_str, evaluate_json
 from core.extractor_manager import ExtractorManager  # Ensure the correct path
 from core.llm.llm import LlmProvider
 from file_server import port
@@ -53,14 +55,14 @@ def save_task(df):
     return True
 
 
-def dataframe_with_selections(df, colum_cfg):
+def dataframe_with_selections(df, colum_cfg, num_rows="dynamic"):
     df_with_selections = df.copy()
     if 'Select' not in df_with_selections.columns:
         df_with_selections.insert(0, "Select", False)
 
     # Get dataframe row-selections from user with st.data_editor
     edited_df = st.data_editor(data=df_with_selections, column_config=colum_cfg,
-                               hide_index=True, num_rows="dynamic", use_container_width=True)
+                               hide_index=True, num_rows=num_rows, use_container_width=True)
 
     # Filter the dataframe using the temporary column, then drop the column
     selected_rows = edited_df[edited_df.Select]
@@ -78,12 +80,11 @@ def get_label_set(name):
     if not os.path.exists(label_file_path):
         st.error(f"没有找到与任务名 {name} 对应的标签文件。")
         return None
-    print(label_file_path)
     return pd.read_csv(label_file_path)
 
 
 # 对测试集files进行处理，返回提取结果
-def run_test_set(files, task, extractor):
+def run(files, task, extractor):
     for file_path in files:
         if not os.path.exists(file_path):
             st.warning(f"文件 {file_path} 不存在，跳过。")
@@ -100,10 +101,12 @@ def run_test_set(files, task, extractor):
 
         # 处理每个文件的提取结果，增加 file_name 和 page_no 列
         for page_no, page_result in enumerate(extraction_result, start=1):
-            result_dict = {"file_name": os.path.basename(file_path), "page_no": page_no}
-            for page in page_result:
-                merged_dict = {**result_dict, **page}
-                yield merged_dict
+            result_dict = {
+                "file_name": os.path.basename(file_path),
+                "page_no": page_no,
+                "label": json.dumps(page_result, indent=2, ensure_ascii=False)
+            }
+            yield result_dict
 
 
 def get_dataset(task):
@@ -112,7 +115,7 @@ def get_dataset(task):
     return matching_data
 
 
-def do_test(task):
+def run_test(task):
     label_set_name = task['label_set']
 
     # 从数据集中取出 name 等于 task['name'] 的行
@@ -131,13 +134,13 @@ def do_test(task):
     label_df = get_label_set(label_set_name)
 
     # 遍历 label_df 的 file_name（去重），每个 file 的全路径是 DATASET_DIR/{id}/{file_name}
-    files =[os.path.join(DATASET_DIR, str(dataset_id), file_name)
+    files = [os.path.join(DATASET_DIR, str(dataset_id), file_name)
             for file_name in label_df['file_name'].drop_duplicates()]
 
     # 处理指定测试集
     results = []
     # result_placeholder = st.empty()  # 用于显示动态更新的结果
-    for result in run_test_set(files, task, extractor):
+    for result in run(files, task, extractor):
         results.append(result)
         result_df = pd.DataFrame(results)
         st.session_state['evl_result_ph'].dataframe(result_df, hide_index=True, use_container_width=True)
@@ -157,27 +160,26 @@ def save_task_result(task, results_df, test=True):
         filename = f"/{task['name']}_evl.csv"
 
     results_df.to_csv(path + filename, index=False)
-    logging.info(f"Successfully save task[{task}] result to {filename}.")
 
 
 def show_task_result(task):
     path = os.path.join(EVALUATE_DIR, "result")
     test_file = os.path.join(path, f"{task['name']}_test.csv")
 
-    if not os.path.exists(test_file) :
+    if not os.path.exists(test_file):
         return False
 
     test_df = pd.read_csv(test_file)
 
     label_df = get_label_set(task['label_set'])
-    evl_df = compare_results(label_df, test_df)
+    evl_df = evaluate_results(label_df, test_df)
 
     st.markdown(f"##### 任务'{task['name']}'的评估结果")
-    show_metrics(evl_df)
-    show_test_result(task, evl_df)
+    show_evl_metrics(evl_df)
+    show_evl_tbl(task, evl_df)
 
 
-def compare_results(df_label, df_test):
+def evaluate_results(df_label, df_test):
     # 仅保留label_df的列
     df_right = df_test[df_label.columns]
 
@@ -197,11 +199,16 @@ def compare_results(df_label, df_test):
             continue
         if '_t' not in column:
             test_column = f"{column}_t"
-            result_column = f"{column}__r"
-            df[result_column] = df.apply(lambda row: compare_values(row[column], row[test_column]), axis=1)
+            score_column = f"score"
+            neg_column = f"neg"
+            # 执行评估
+            df["tmp"] = df.apply(lambda row: evaluate_json_str(row[test_column], row[column]), axis=1)
+            df[score_column] = df["tmp"].apply(lambda x: x['score'])
+            df[neg_column] = df["tmp"].apply(lambda x: str(x['negative']))
+            df_result[score_column] = df[score_column]
             df_result[column] = df[column]
             df_result[test_column] = df[test_column]
-            df_result[result_column] = df[result_column]
+            df_result[neg_column] = df[neg_column]
 
     # 将 file_name 和 page_no 列添加回结果 DataFrame 的开头
     df_result.insert(0, 'page_no', page_no_col)
@@ -210,7 +217,7 @@ def compare_results(df_label, df_test):
     return df_result
 
 
-def show_test_result(task, df_result):
+def show_evl_tbl(task, df_result):
     # 做表格的一些特殊处理便于显示 todo: 异常处理
     df_display = df_result.copy()
     tid = get_dataset(task)['id'].values[0]
@@ -219,60 +226,91 @@ def show_test_result(task, df_result):
     df_display['file_name'] = df_result['file_name'].apply(lambda x: f"http://{hostname}:{port}/files?fn=data/dataset/{tid}/{x}")
     cc = {"file_name": st.column_config.LinkColumn(display_text=f"data/dataset/{tid}/(.*?)$")}
 
-    # 添加一个状态列
-    df_display['status'] = df_result.apply(lambda row: all(row[col] for col in df_result.columns if col.endswith('__r')), axis=1)
-    df_display = df_display[['status'] + [col for col in df_display.columns if col != 'status']]
+    # # 添加一个状态列
+    # df_display['status'] = df_result.apply(lambda row: all(row[col] for col in df_result.columns if col.endswith('__r')), axis=1)
+    # df_display = df_display[['status'] + [col for col in df_display.columns if col != 'status']]
+    #
+    # # 将 True 和 False 替换为 ✔️ 和 ❌
+    # comparison_columns = [col for col in df_display.columns if col.endswith('__r')]
+    # for col in comparison_columns:
+    #     df_display[col] = df_display[col].apply(lambda x: '✔️' if x else '❌')
 
-    # 将 True 和 False 替换为 ✔️ 和 ❌
-    comparison_columns = [col for col in df_display.columns if col.endswith('__r')]
-    for col in comparison_columns:
-        df_display[col] = df_display[col].apply(lambda x: '✔️' if x else '❌')
+    # 格式化 JSON 字符串
+    def format_json(json_str):
+        if not isinstance(json_str, str):
+            return json_str
+        try:
+            parsed = json.loads(json_str)
+            return json.dumps(parsed, indent=2, ensure_ascii=False)
+        except json.JSONDecodeError:
+            return json_str
+
+    # 应用格式化函数到 DataFrame
+    df_formatted = df_display.map(format_json)
 
     st.write("明细")
-    st.data_editor(df_display, column_config=cc,   hide_index=True, use_container_width=True, num_rows="dynamic")
+    sel, ds = dataframe_with_selections(df_formatted, cc, "fixed")
+    if sel.empty:
+        return
+
+    label = sel['label'].iloc[-1]
+    label_t = sel['label_t'].iloc[-1]
+    label_neg = sel['neg'].iloc[-1]
+    c1, c2, c3 = st.columns([1, 1, 1])
+    with c1:
+        st.caption("label(标注)")
+        st.json(label)
+    with c2:
+        st.caption("label_t(测试)")
+        st.json(label_t)
+    with c3:
+        st.caption("neg(差异)")
+        st.json(label_neg)
+
+    # st.data_editor(df_formatted, column_config=cc,   hide_index=True, use_container_width=True)
 
 
-def show_metrics(evl_df):
+def show_evl_metrics(evl_df):
     # 提取以result_colum_suffix结尾的列进行统计
-    comparison_columns = [col for col in evl_df.columns if col.endswith(result_colum_suffix)]
+    # comparison_columns = [col for col in evl_df.columns if col.endswith(result_colum_suffix)]
 
     # 计算总体准确率
-    total_correct = evl_df[comparison_columns].all(axis=1).sum()
-    total_accuracy = total_correct / len(evl_df)
+    total_correct = evl_df['score'].sum()
+    total_accuracy = total_correct / float(len(evl_df))
 
     # 计算每一列准确率
-    column_accuracies = evl_df[comparison_columns].mean()
+    # column_accuracies = evl_df[comparison_columns].mean()
 
     # 展示总体准确率
     st.metric(label="总体准确率", value=f"{total_accuracy:.2%}")
 
-    # 展示每一列准确率
-    column_accuracies.index = column_accuracies.index.str.replace(result_colum_suffix, '')
-    column_accuracies = column_accuracies * 100
-    st.write("字段准确率(%)")
-    st.bar_chart(column_accuracies)
+    # # 展示每一列准确率
+    # column_accuracies.index = column_accuracies.index.str.replace(result_colum_suffix, '')
+    # column_accuracies = column_accuracies * 100
+    # st.write("字段准确率(%)")
+    # st.bar_chart(column_accuracies)
 
 
 def evaluate(task):
     # 执行测试任务，获取测试结果
-    task_result = do_test(task)
-    if not task_result:
+    run_result = run_test(task)
+    if not run_result:
         return
 
     # 保存测试结果
-    save_task_result(task, pd.DataFrame(task_result))
+    save_task_result(task, pd.DataFrame(run_result))
 
     # 读取标注结果
     label_df = get_label_set(task['label_set'])
 
     # 评估
-    evl_df = compare_results(label_df, pd.DataFrame(task_result))
+    evl_df = evaluate_results(label_df, pd.DataFrame(run_result))
     # 保存评估结果
     save_task_result(task, evl_df, test=False)
 
     # 展示
-    show_metrics(evl_df)
-    show_test_result(task, evl_df)
+    show_evl_metrics(evl_df)
+    show_evl_tbl(task, evl_df)
 
 
 # Initialize the ExtractorManager

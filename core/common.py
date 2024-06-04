@@ -1,12 +1,9 @@
 import base64
 import hashlib
 import json
-import logging
 from typing import List, Any
 
-import pandas as pd
 import re
-import difflib
 from enum import Enum
 from mimetypes import guess_type
 
@@ -102,51 +99,3 @@ def local_image_to_data_url(image_path):
     # Construct the data URL
     return f"data:{mime_type};base64,{base64_encoded_data}"
 
-
-def compare_values(val1, val2):
-    # 自定义比较函数
-    def is_date(string):
-        try:
-            pd.to_datetime(string)
-            return True
-        except ValueError:
-            return False
-
-    def is_amount(string):
-        if isinstance(string, float) or isinstance(string, int):
-            return True
-        return bool(re.match(r'^\d+(\.\d+)?$', string))
-
-    def normalize_string(string):
-        if not isinstance(string, str):
-            string = str(string)
-        return re.sub(r'[\s\W_]+', '', string).lower()
-
-    # todo: 改为特殊标识，而非空值
-    if pd.isnull(val1):
-        return True  # 如果 val1 是空值，则返回 True
-
-    val1 = str(val1)
-    val2 = str(val2)
-
-    if is_date(val1) and is_date(val2):
-        # 日期比较
-        date1 = pd.to_datetime(val1, errors='coerce')
-        date2 = pd.to_datetime(val2, errors='coerce')
-        if date1 != date2:
-            date2 = pd.to_datetime(val2, errors='coerce', dayfirst=True)
-            logging.warning(f"调整了dayfirst：date1[{date1}] : date2[{date2}] ")
-            return date1 == date2
-        return True
-    elif is_amount(val1) and is_amount(val2):
-        # 金额比较
-        amount1 = float(val1) if pd.notnull(val1) else None
-        amount2 = float(val2) if pd.notnull(val2) else None
-        return amount1 == amount2
-    else:
-        # 字符串比较，忽略大小写、空格和标点符号
-        str1 = normalize_string(val1) if pd.notnull(val1) else None
-        str2 = normalize_string(val2) if pd.notnull(val2) else None
-
-        similarity = difflib.SequenceMatcher(None, str1, str2).ratio()
-        return similarity >= 0.8
