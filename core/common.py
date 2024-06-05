@@ -53,27 +53,34 @@ def flatten_if_single_nested_array(arr: List[Any]) -> List[Any]:
 
 
 # Custom parser
-def extract_json(text) -> List[dict]:
+def extract_json(text: str) -> List[dict]:
     """Extracts JSON content from a string where JSON is embedded between ```json and ``` tags.
 
     Parameters:
         text (str): The text containing the JSON content.
 
     Returns:
-        list: A list of extracted JSON strings.
+        list: A list of extracted JSON objects.
     """
     # Define the regular expression pattern to match JSON blocks
-    pattern = r"```json(.*?)```"
+    pattern = r"```(?:json)?\s*([\s\S]*?)\s*```"
 
     # Find all non-overlapping matches of the pattern in the string
     matches = re.findall(pattern, text, re.DOTALL)
 
-    # Return the list of matched JSON strings, stripping any leading or trailing whitespace
-    try:
-        parse_json = [json.loads(match.strip()) for match in matches]
-        return flatten_if_single_nested_array(parse_json)
-    except Exception:
-        raise ValueError(f"Failed to parse: {text}")
+    # Attempt to parse the matches as JSON
+    extracted_json = []
+    for match in matches:
+        print(match.strip())
+        # Remove the 'json' string if present at the beginning
+        cleaned_match = re.sub(r"^json\s*", "", match.strip(), flags=re.IGNORECASE)
+        try:
+            parsed_json = json.loads(cleaned_match)
+            extracted_json.append(parsed_json)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse JSON: {cleaned_match}. Error: {e}")
+
+    return extracted_json
 
 
 def get_file_hash(filepath):

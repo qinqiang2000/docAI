@@ -5,32 +5,53 @@ import difflib
 import re
 import logging
 
+# 定义全局常量
+REGEX_MARKER = "//"
+
+# 自定义比较函数
+def is_date(string):
+    try:
+        pd.to_datetime(string)
+        return True
+    except ValueError:
+        return False
+
+def is_amount(string):
+    if isinstance(string, float) or isinstance(string, int):
+        return True
+    return bool(re.match(r'^\d+(\.\d+)?$', string))
+
+def normalize_string(string):
+    if not isinstance(string, str):
+        string = str(string)
+    return re.sub(r'[\s\W_]+', '', string).lower()
+
+def is_regex(string):
+    # 自定义标识符，用于识别正则表达式
+    if string.startswith(REGEX_MARKER) and string.endswith(REGEX_MARKER):
+        pattern = string.strip(REGEX_MARKER)
+        try:
+            re.compile(pattern)
+            return True
+        except re.error:
+            return False
+    return False
 
 def compare_values(val1, val2):
-    # 自定义比较函数
-    def is_date(string):
-        try:
-            pd.to_datetime(string)
-            return True
-        except ValueError:
-            return False
-
-    def is_amount(string):
-        if isinstance(string, float) or isinstance(string, int):
-            return True
-        return bool(re.match(r'^\d+(\.\d+)?$', string))
-
-    def normalize_string(string):
-        if not isinstance(string, str):
-            string = str(string)
-        return re.sub(r'[\s\W_]+', '', string).lower()
-
     # val1作为label，如果是空，则直接返回true。todo: 改为特殊标识，而非空值;
     if pd.isnull(val1):
         return True
 
+    if is_regex(val1):
+        pattern = val1.strip('//')  # 去除自定义标识符
+        return re.search(pattern, val2) is not None  # 正则表达式匹配
+
     val1 = str(val1)
     val2 = str(val2)
+
+    if is_regex(val1):
+        pattern = val1.strip(REGEX_MARKER)  # 去除自定义标识符
+        return re.search(pattern, val2) is not None  # 正则表达式匹配
 
     if val1 == val2:
         return True  # 直接比较字符串

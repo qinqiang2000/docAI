@@ -1,45 +1,12 @@
-from datetime import datetime
-
-import streamlit as st
-import numpy as np
 import pandas as pd
 
-df = pd.DataFrame(
-    {
-        "Animal": ["Lion", "Elephant", "Giraffe", "Monkey", "Zebra"],
-        "Habitat": ["Savanna", "Forest", "Savanna", "Forest", "Savanna"],
-        "Lifespan (years)": [15, 60, 25, 20, 25],
-        "Average weight (kg)": [190, 5000, 800, 10, 350],
-    }
-)
+# 假设df是你的DataFrame
+df = pd.DataFrame({
+    'A': [1, 2, 3],
+    'B': [4, 5, 6],
+    'C': [7, 8, 9]
+})
 
-def on_change(df):
-    if df['Animal'].duplicated():
-        st.error("Duplicated values in 'Animal' column are not allowed.")
-    st.write(f"Data changed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-def dataframe_with_selections(df):
-    df_with_selections = df.copy()
-    df_with_selections.insert(0, "Select", False)
-
-    # Get dataframe row-selections from user with st.data_editor
-    edited_df = st.data_editor(
-        df_with_selections,
-        hide_index=True,
-        column_config={"Select": st.column_config.CheckboxColumn(required=True)},
-        on_change=on_change,
-        args=(edited_df)
-    )
-
-    # Filter the dataframe using the temporary column, then drop the column
-    selected_rows = edited_df[edited_df.Select]
-    return selected_rows.drop('Select', axis=1)
-
-
-selection = dataframe_with_selections(df)
-st.write("Your selection:")
-st.write(selection)
-if not selection.empty:
-    print(selection)
-else:
-    print("No selection")
+# 将最后一行移动到第一行
+df = pd.concat([df.iloc[-1:], df.iloc[:-1]], ignore_index=True)
+print(df)

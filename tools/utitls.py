@@ -70,7 +70,7 @@ def show_label_json(fields, lang="javascript"):
         content = st_ace(
             value=formatted, auto_update=True,
             language=lang,
-            font_size=13, tab_size=2, )
+            font_size=13, tab_size=2)
         edited_data.append(content)
     return edited_data
 

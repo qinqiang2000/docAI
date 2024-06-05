@@ -81,7 +81,8 @@ def after_extract(result):
     # todo: 处理数值类型的，且带千分位的
     # result = preprocess_json(result)
 
-    return extract_json(result)
+    ret = extract_json(result)
+    return ret
 
 
 # 入口，包括事前、事中、事后处理

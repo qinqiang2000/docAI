@@ -47,7 +47,8 @@ class Extractor:
         result = self.description
         result = result + "\n 输出json格式：\n" + self.fields
         result = result + f"""\n\n输出要求:
-         - 以JSON数组输出答案；确保用```json 和 ```标签包装答案。 JSON对象的值都转成字符串返回。
+         - 确保JSON数组输出答案；确保用```json 和 ```标签包装答案。
+         - 只输出JSON数组，不要生成其他解释
          """
         return result
 

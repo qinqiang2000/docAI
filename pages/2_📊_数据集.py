@@ -41,6 +41,9 @@ def save_uploaded_files(id, uploaded_files):
 
 
 def save_data(df):
+    # 最后一行（最新数据集）放到第一行
+    df = pd.concat([df.iloc[-1:], df.iloc[:-1]], ignore_index=True)
+
     st.session_state['data'] = df
     st.session_state['data'].to_csv(os.path.join(DATASET_DIR, "dataset.csv"), index=False)
 

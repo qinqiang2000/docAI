@@ -8,7 +8,6 @@ import streamlit as st
 from streamlit import session_state as session
 import pandas as pd
 from streamlit_js_eval import streamlit_js_eval
-import streamlit_antd_components as sac
 
 from core.common import DATASET_DIR, DocLanguage, OCRProvider, LABEL_DIR
 from core.extractor_manager import ExtractorManager
@@ -107,19 +106,8 @@ def process_file(fn):
     session['labelling_data'] = ret  # 将数据存储在session_state中
 
 
-def auto_label(fn):
-    file_path = os.path.join(DATASET_DIR, session['dataset_id'], fn)
-
-    extractor = manager.get_extractor(session['extractor'])
-    ret = extractor.run(file_path, None, llm_provider=LlmProvider.LLaMA3_70b_GROQ, ocr_provider=OCRProvider.REGENAI_DOC_HACK)
-
-    session['labelling_data'] = ret
-    st.rerun()
-
-
 def on_file_change():
     fn = session['selectbox_file']
-    print(fn)
     if fn:
         process_file(fn)
 
@@ -193,6 +181,21 @@ def save_manual_labels(labeled_data, filename, dataset_name, persist=True):
     save_one_file_label(new_data, dataset_name, filename, persist=persist)
 
 
+def auto_label(fn):
+    file_path = os.path.join(DATASET_DIR, session['dataset_id'], fn)
+
+    extractor = manager.get_extractor(session['extractor'])
+    ret = extractor.run(file_path, None, llm_provider=LlmProvider.LLaMA3_70b_GROQ, ocr_provider=OCRProvider.REGENAI_DOC_HACK)
+
+    session['labelling_data'] = ret
+
+
+def on_next_click(labeled_, ds, idx):
+    save_manual_labels(labeled_, session['selectbox_file'], ds)
+    session['file_index'] = idx
+    process_file(_files[idx])
+
+
 # --- 侧边栏 ---
 with st.sidebar:
     st.caption("⚠️不能多人同时标注同一数据集")
@@ -243,7 +246,6 @@ with col1.container():
 # 主区域的右面板
 with col2.container():
     if session['selectbox_file'] and 'labelling_data' in st.session_state:
-        st.write("正在标注: ", session['selectbox_file'])
         st.caption("注：以json数组格式标注")
 
         _files = session['file_list']
@@ -252,12 +254,9 @@ with col2.container():
         labeled_data = show_label_json(session['labelling_data'], "json")
         msg_placeholder = st.empty()
 
-        if st.button(f"下一个({i + 1}/{len(_files)})", help="自动保存当前数据"):
-            save_manual_labels(labeled_data, session['selectbox_file'], selected_dataset)
-
-            i = (i + 1) % len(_files)
-            session['file_index'] = i
-            process_file(_files[i])
+        if st.button(f"下一个({i + 1}/{len(_files)})", help="自动保存当前数据",
+                     on_click=on_next_click, args=(labeled_data, selected_dataset, (i + 1) % len(_files))):
+            st.rerun()
             st.rerun()
         if st.button("保存", key="save_1"):
             save_manual_labels(labeled_data, session['selectbox_file'], selected_dataset)
@@ -266,8 +265,9 @@ with col2.container():
             on_file_change()
             time.sleep(3)
             msg_placeholder.empty()
-        if st.button("自动标注"):
-            auto_label(_files[i])
+        if st.button("自动标注", on_click=auto_label, args=(_files[i],)):
+            st.rerun()
+
 
 # 主页面底部
 expander = st.expander(f"Label result of dataset [{selected_dataset}]", expanded=False)
