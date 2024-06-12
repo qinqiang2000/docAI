@@ -77,7 +77,7 @@ def extract_json(text: str) -> List[dict]:
         try:
             parsed_json = json.loads(cleaned_match)
             extracted_json.append(parsed_json)
-        except json.JSONDecodeError as e:
+        except Exception as e:
             raise ValueError(f"Failed to parse JSON: {cleaned_match}. Error: {e}")
 
     return extracted_json

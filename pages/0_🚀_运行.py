@@ -51,7 +51,7 @@ def handle_file_upload():
 def steam_callback(chuck):
     session['text'] += chuck
     if "result_placeholder" in session:
-        session["result_placeholder"].markdown(session['text'])
+        session['result_placeholder'].write(session['text'])
 
 
 def display_pdf(file_path):
@@ -93,14 +93,24 @@ def display_process(file):
 
     for option in options:
         extractor = manager.get_extractor(option)
-        data_list = extractor.run(file_path, steam_callback, llm_provider=session["selected_llm_provider"],
-                                  ocr_provider=session["selected_ocr_provider"], lang=session["selected_lang"])
-        data_str_list = []
-        for data in data_list:
-            data_str = [{k: str(v) for k, v in item.items()} for item in data]  # 将数据转换为字符串以确保兼容性
-            data_str_list.append(data_str)
+        data_str_list = extractor.run(file_path, steam_callback, llm_provider=session["selected_llm_provider"],
+                                      ocr_provider=session["selected_ocr_provider"], lang=session["selected_lang"])
+        # data_str_list = []
+        # for data in data_list:
+        #     data_str = [{k: str(v) for k, v in item.items()} for item in data]  # 将数据转换为字符串以确保兼容性
+        #     data_str_list.append(data_str)
 
         session['data'].append((option, data_str_list))  # 将数据存储在session_state中
+
+
+def on_next_click():
+    session['file_index'] = (session['file_index'] + 1) % len(_files)
+    session.pop('rotated_image', None)
+    session.pop('file_id', -1)
+
+
+def on_run_click():
+    session.pop('file_id', -1)
 
 
 # 侧边栏
@@ -112,7 +122,8 @@ with st.sidebar:
     session['selected_extractor'] = st.selectbox("提取器", options=available_extractors,
                                                  help="暂不支持多选")
 
-    llm_provider = st.selectbox("LLM", options=list(LlmProvider.__members__.keys()),help="带_V表示用纯视觉提取，不需先OCR")
+    llm_provider = st.selectbox("LLM", options=list(LlmProvider.__members__.keys()),
+                                help="带_V表示用纯视觉提取，不需先OCR")
     session["selected_llm_provider"] = LlmProvider[llm_provider]
 
     # 如果是直接用llm，则不显示OCR选项
@@ -126,9 +137,7 @@ with st.sidebar:
                                 help="部分OCR模块需指定语言；混合语言者，选占比最多的语种")
     session["selected_lang"] = next(e for e in DocLanguage if e.value == doc_language)
 
-    if st.button("运行"):
-        session.pop('file_id', -1)
-        st.rerun()
+    st.button("运行", on_click=on_run_click)
 
 cols = [0.65, 0.35]
 col1, col2 = st.columns(cols)
@@ -148,25 +157,24 @@ column_config = {
     ),
 }
 
+
 # 右面板，呈现数据
 with col2.container(height=height, border=False):  # Adjusted for interface elements
-    if 'data' in session and session['data']:
-        for name, data_list in session['data']:
-            idx = session['file_index']
-            if _files and len(_files) > 0:
-                show_struct_data(name, data_list, filename=_files[idx].name)
+    # 暂不展示表格类数据
+    # if 'data' in session and session['data']:
+    #   for name, data_list in session['data']:
+    #     idx = session['file_index']
+    #     if _files and len(_files) > 0:
+    #         show_struct_data(name, data_list, filename=_files[idx].name)
 
-        if st.button(f"下一个({session['file_index'] + 1}/{len(_files)})"):
-            session['file_index'] = (session['file_index'] + 1) % len(_files)
-            session.pop('rotated_image', None)
-            session.pop('file_id', -1)
-            st.rerun()
+    st.button(f"下一个({session['file_index'] + 1}/{len(_files)})", on_click=on_next_click)
 
-    # 流式呈现过程数据
     session["result_placeholder"] = st.empty()
-    try:
-        json_ = extract_json(session['text'])
-        session["result_placeholder"].write(json_)
-    except ValueError:
-        session["result_placeholder"].write(session['text'])
-
+    if session['text']:
+        try:
+            json_ = extract_json(session['text'])
+            if isinstance(json_, list):
+                for j in json_:
+                    session["result_placeholder"].write(j)
+        except ValueError:
+            session["result_placeholder"].write(session['text'])
