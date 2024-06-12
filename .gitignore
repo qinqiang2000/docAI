@@ -19,6 +19,7 @@ build/
 data/dataset
 data/evaluate
 data/labels
+data/ocr_cache
 
 # 忽略Python编译文件  
 *.pyc  
