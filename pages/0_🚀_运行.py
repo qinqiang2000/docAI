@@ -9,6 +9,8 @@ from core.common import OCRProvider, DocLanguage, extract_json
 from core.llm.llm import LlmProvider, pure_llm
 from file_server import save_uploaded_tmp_file, port
 from tools.utitls import custom_page_styles, show_struct_data, display_image
+from PIL import Image
+import os
 
 st.set_page_config(
     page_title="运行",
@@ -62,6 +64,25 @@ def display_pdf(file_path):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 
+# 将图片转换为PDF，然后用展示pdf
+def display_img_pdf(image_path):
+    # 获取图片文件的目录和文件名
+    image_dir = os.path.dirname(image_path)
+    image_filename = os.path.splitext(os.path.basename(image_path))[0]
+
+    # 构造输出PDF文件的路径
+    output_pdf_path = os.path.join(image_dir, f"{image_filename}.pdf")
+
+    # 打开图片并转换为RGB格式（如有需要）
+    image = Image.open(image_path)
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+
+    # 保存为PDF
+    image.save(output_pdf_path, "PDF")
+    return output_pdf_path
+
+
 def display_process(file):
     file_path = save_uploaded_tmp_file(file)
 
@@ -69,7 +90,8 @@ def display_process(file):
         # pdf_reader(file)  # display file
         display_pdf(file_path)  # display file
     elif "image" in file.type:
-        display_image(file)
+        # display_image(file)
+        display_pdf(display_img_pdf(file_path))
     else:
         st.warning("Unsupported file type")
         return

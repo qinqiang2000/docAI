@@ -13,6 +13,7 @@ from core.evaluator.json_custom_evl import evaluate_json_str, evaluate_json
 from core.extractor_manager import ExtractorManager  # Ensure the correct path
 from core.llm.llm import LlmProvider
 from file_server import port
+from tools.utitls import display_image
 
 st.set_page_config(
     page_title="评估", page_icon="📝", layout="wide",
@@ -114,6 +115,12 @@ def get_dataset(task):
     matching_data = st.session_state['data'][st.session_state['data']['name'] == label_set_name]
     return matching_data
 
+def show_file_preview(url):
+    if url.lower().endswith('.pdf'):
+        pdf_display = f'<embed src="{url}" type="application/pdf" width="100%" />'
+        st.markdown(pdf_display, unsafe_allow_html=True)
+    elif url.lower().endswith(('.png', '.jpg', '.jpeg')):
+        st.image(url)
 
 def run_test(task):
     label_set_name = task['label_set']
@@ -261,11 +268,13 @@ def show_evl_tbl(task, df_result):
         st.caption("label(标注)")
         st.json(label)
     with c2:
-        st.caption("label_t(测试)")
+        st.caption("test(测试)")
         st.json(label_t)
     with c3:
         st.caption("neg(差异)")
         st.json(label_neg)
+
+    show_file_preview(sel['file_name'].iloc[-1])
 
     # st.data_editor(df_formatted, column_config=cc,   hide_index=True, use_container_width=True)
 

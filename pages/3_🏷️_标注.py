@@ -185,12 +185,14 @@ def auto_label(fn):
     file_path = os.path.join(DATASET_DIR, session['dataset_id'], fn)
 
     extractor = manager.get_extractor(session['extractor'])
-    ret = extractor.run(file_path, None, llm_provider=LlmProvider.LLaMA3_70b_GROQ, ocr_provider=OCRProvider.REGENAI_DOC_HACK)
+    ret = extractor.run(file_path, None, llm_provider=LlmProvider.LLaMA31_70b_GROQ, ocr_provider=OCRProvider.REGENAI_DOC_HACK)
 
     session['labelling_data'] = ret
 
 
-def on_next_click(labeled_, ds, idx):
+def on_next_click(labeled_, ds, idx=0):
+    i = _files.index(session['selectbox_file'])
+    idx = int((i+1) / len(_files))
     save_manual_labels(labeled_, session['selectbox_file'], ds)
     session['file_index'] = idx
     process_file(_files[idx])
@@ -255,7 +257,7 @@ with col2.container():
         msg_placeholder = st.empty()
 
         if st.button(f"下一个({i + 1}/{len(_files)})", help="自动保存当前数据",
-                     on_click=on_next_click, args=(labeled_data, selected_dataset, (i + 1) % len(_files))):
+                     on_click=on_next_click, args=(labeled_data, selected_dataset)):
             st.rerun()
             st.rerun()
         if st.button("保存", key="save_1"):

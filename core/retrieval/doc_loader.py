@@ -7,6 +7,7 @@ import re
 
 from core.common import OCRProvider, DocLanguage
 from core.retrieval.ocr import ocr
+from core.retrieval.pdf_extractor import PDFTextExtractor
 
 logging.basicConfig(format='[%(asctime)s %(filename)s:%(lineno)d] %(levelname)s: %(message)s', level=logging.INFO, force=True)
 load_dotenv(override=True)
@@ -58,24 +59,28 @@ def async_load(doc_path, queue, provider=OCRProvider.RuiZhen, lang=DocLanguage.c
         queue.put((-1, None, -1))
         return
 
-    pdf = pdfplumber.open(doc_path)
-    num_pages = len(pdf.pages)
-    for page in pdf.pages:
-        text = page.extract_text()
+    extractor = PDFTextExtractor()
+    num_pages = extractor.get_page_count(doc_path)
+    for page in range(num_pages):
+        text = extractor.extract_text(doc_path, page)
 
         # todo: 校验字体；单独成一个判断函数
         # 判断是否扫描件后包含无法解析字体，39是一个经验值
-        if provider is None or not text or len(text) < 39 or len(page.images) > 5 or cid_percentage(text) > 19:
-            logging.info(f"扫描件[{osp.split(doc_path)[1]}]: len(text)[{len(text)}], len(images)[{len(page.images)}]")
+        if provider is None or not text or len(text) < 39 or cid_percentage(text) > 19:
+            logging.info(f"扫描件[{osp.split(doc_path)[1]}]: len(text)[{len(text)}]]")
             if provider is None:
-                text = save_page_as_image(doc_path, page)
+                text = save_page_as_image(doc_path, page_no)
             else:
-                text = ocr(doc_path, page.page_number, provider, lang)
+                text = ocr(doc_path, page, provider, lang)
 
-        logging.info(f"[{osp.split(doc_path)[1]}] put to queue: {page.page_number}")
-        queue.put((page.page_number, text, num_pages))
+        logging.info(f"[{osp.split(doc_path)[1]}] put to queue: {page}")
+        queue.put((page, text, num_pages))
 
-    pdf.close()
+    # pdf = pdfplumber.open(doc_path)
+    # num_pages = len(pdf.pages)
+    # for page in pdf.pages:
+    #     text = page.extract_text()
+
     logging.info(f"[{osp.split(doc_path)[1]}] put to queue: finish")
     queue.put((-1, None, -1))
 

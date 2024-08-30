@@ -42,12 +42,12 @@ def compare_values(val1, val2):
     if pd.isnull(val1):
         return True
 
+    val1 = str(val1)
+    val2 = str(val2)
+
     if is_regex(val1):
         pattern = val1.strip('//')  # 去除自定义标识符
         return re.search(pattern, val2) is not None  # 正则表达式匹配
-
-    val1 = str(val1)
-    val2 = str(val2)
 
     if is_regex(val1):
         pattern = val1.strip(REGEX_MARKER)  # 去除自定义标识符

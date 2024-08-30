@@ -11,12 +11,13 @@ from groq import Groq
 
 
 class LlmProvider(Enum):
-    LLaMA3_70b_GROQ = 9
+    LLaMA31_70b_GROQ = 9
     AZURE_GPT4o = 1
     GPT4o = 8
-    AZURE_GPT35 = 7
+    AZURE_GPT4oMini = 7
     GPT4o_V = 91
-    GPT35 = 3
+    AZURE_GPT4o_V = 92
+    GPT4o_mini = 3
     # GPT4 = 2
     # MOONSHOT = 4
     # GEMINI_PRO = 5
@@ -86,7 +87,7 @@ def after_extract(result):
 
 
 # 入口，包括事前、事中、事后处理
-def extract_bill(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=None):
+def extract_bill(text, provider=LlmProvider.AZURE_GPT4oMini, sys_prompt=None, callback=None):
     # 事前
     ret = before_extract(text)
 
@@ -97,7 +98,7 @@ def extract_bill(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callba
     return after_extract(ret)
 
 
-def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=None):
+def extract(text, provider=LlmProvider.AZURE_GPT4oMini, sys_prompt=None, callback=None):
     if provider == LlmProvider.MOCK:
         # 模拟延时，睡眠1秒
         time.sleep(1)
@@ -119,8 +120,8 @@ def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=No
     # base_prompt = unify_prompt(get_prompt_template())
     logging.info(f"llm={provider}, [prompt + text]：\n{sys_prompt}\n{text}")
 
-    if provider == LlmProvider.GPT35:
-        return LLMOpenAI("gpt-3.5-turbo", None, True, callback).generate_text(text, sys_prompt)
+    if provider == LlmProvider.GPT4o_mini:
+        return LLMOpenAI("gpt-4o-mini", None, True, callback).generate_text(text, sys_prompt)
 
     if provider == LlmProvider.GPT4o:
         return LLMOpenAI("gpt-4o", None, True, callback).generate_text(text, sys_prompt)
@@ -130,29 +131,41 @@ def extract(text, provider=LlmProvider.AZURE_GPT35, sys_prompt=None, callback=No
         logging.info(f"using GPT4o_V to extract file: {file_path}")
         return LLMOpenAI("gpt-4o", None, True, callback).generate_text("", sys_prompt, file_path)
 
-    if provider == LlmProvider.LLaMA3_70b_GROQ:
-        client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
-        return LLMOpenAI("llama3-70b-8192", client, True, callback).generate_text(text, sys_prompt)
+    if provider == LlmProvider.LLaMA31_70b_GROQ:
+        client = Groq(api_key=os.environ.get("GROQ_API_KEY"), )
+        # return LLMOpenAI("llama3-70b-8192", client, True, callback).generate_text(text, sys_prompt)
+        return LLMOpenAI("llama-3.1-70b-versatile", client, True, callback).generate_text(text, sys_prompt)
 
     if provider == LlmProvider.AZURE_GPT4o:
-        client = AzureOpenAI(
+        azure_client = AzureOpenAI(
             api_key=os.environ['AZURE_OPENAI_API_KEY'],
             api_version=os.environ['OPENAI_API_VERSION'],
             azure_endpoint=os.environ['AZURE_OPENAI_ENDPOINT']
         )
         model = os.environ['OPENAI_DEPLOYMENT_NAME']
         print("使用模型API：Azure ", model)
-        return LLMOpenAI(model, client, True, callback).generate_text(text, sys_prompt)
+        return LLMOpenAI(model, azure_client, callback is not None, callback).generate_text(text, sys_prompt)
 
-    if provider == LlmProvider.AZURE_GPT35:
-        client = AzureOpenAI(
-            api_key=os.environ['AZURE_OPENAI_GPT35_API_KEY'],
-            api_version=os.environ['OPENAI_API_GPT35_VERSION'],
-            azure_endpoint=os.environ['AZURE_OPENAI_GPT35_ENDPOINT']
+    if provider == LlmProvider.AZURE_GPT4o_V:
+        azure_client = AzureOpenAI(
+            api_key=os.environ['AZURE_OPENAI_API_KEY'],
+            api_version=os.environ['OPENAI_API_VERSION'],
+            azure_endpoint=os.environ['AZURE_OPENAI_ENDPOINT']
         )
-        model = os.environ['OPENAI_GPT35_DEPLOYMENT_NAME']
+        model = os.environ['OPENAI_DEPLOYMENT_NAME']
+        file_path = text
+        logging.info(f"using AZURE_GPT4o_V to extract file: {file_path}")
+        return LLMOpenAI(model, azure_client, True, callback).generate_text("", sys_prompt, file_path)
+
+    if provider == LlmProvider.AZURE_GPT4oMini:
+        client = AzureOpenAI(
+            api_key=os.environ['AZURE_OPENAI_GPT4oMINI_API_KEY'],
+            api_version=os.environ['OPENAI_API_GPT4oMINI_VERSION'],
+            azure_endpoint=os.environ['AZURE_OPENAI_GPT4oMINI_ENDPOINT']
+        )
+        model = os.environ['OPENAI_GPT4OMIN_DEPLOYMENT_NAME']
         print("使用模型API：Azure ", model)
-        return LLMOpenAI(model, client, True, callback).generate_text(text, sys_prompt)
+        return LLMOpenAI(model, client, callback is not None, callback).generate_text(text, sys_prompt)
 
     return """ {"Doc Type": "LLM配置错误"}"""
 

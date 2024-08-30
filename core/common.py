@@ -71,7 +71,6 @@ def extract_json(text: str) -> List[dict]:
     # Attempt to parse the matches as JSON
     extracted_json = []
     for match in matches:
-        print(match.strip())
         # Remove the 'json' string if present at the beginning
         cleaned_match = re.sub(r"^json\s*", "", match.strip(), flags=re.IGNORECASE)
         try:

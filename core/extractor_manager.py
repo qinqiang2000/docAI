@@ -8,12 +8,12 @@ from core.extractor import Extractor  # Make sure to import the Extractor class
 class ExtractorManager:
     EXTRACTORS_FILE = 'data/extractors.json'
 
-    def __init__(self):
-        self.extractors = self.load_extractors()
+    def __init__(self, p=EXTRACTORS_FILE):
+        self.extractors = self.load_extractors(p)
 
-    def load_extractors(self):
-        if os.path.exists(self.EXTRACTORS_FILE):
-            with open(self.EXTRACTORS_FILE, 'r') as f:
+    def load_extractors(self, p=EXTRACTORS_FILE):
+        if os.path.exists(p):
+            with open(p, 'r') as f:
                 data = json.load(f)
             # Ensure 'name' is not duplicated in the details
             return {name: Extractor(name, **{k: v for k, v in details.items() if k != 'name'}) for name, details in

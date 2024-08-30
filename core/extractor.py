@@ -58,7 +58,7 @@ class Extractor:
         return cleaned_json
 
     def run(self, file_path, stream_callback,
-            llm_provider=LlmProvider.AZURE_GPT35, ocr_provider=OCRProvider.RuiZhen, lang=DocLanguage.chs):
+            llm_provider=LlmProvider.AZURE_GPT4oMini, ocr_provider=OCRProvider.RuiZhen, lang=DocLanguage.chs):
         """
         Process the given file based on the core's configuration and stream the results
         using the provided stream_callback function.

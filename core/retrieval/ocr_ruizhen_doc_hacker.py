@@ -72,18 +72,19 @@ class DocumentHacker:
             if response_json['result'] == 1:
                 status = response_json['response']['data']['status']
                 name = response_json['response']['data']['name']
-                print(f"File[{name}]: current status: {status}")
+                print(f"File[{name}] ({retry}): current status: {status}")
                 if status == "SUCCESS":
+                    # print(f"File[{name}]: raw json: {response_json['response']['data']}")
                     print(f"File[{name}]: Document processing completed successfully.")
-                    return True
+                    return True, response_json['response']['data']
             else:
                 print(f"Error: {response_json['message']}")
                 break
 
             time.sleep(0.5)
-        return False
+        return False, None
 
-    def export_document_to_word(self, document_uid, path):
+    def export_document_to_word(self, ocr_data, document_uid, path):
         os.makedirs(path, exist_ok=True)
 
         url = f'https://regenai.glority.cn/api/v1/document/export?document_uid={document_uid}&export_type=word'
@@ -94,7 +95,12 @@ class DocumentHacker:
                 f.write(response.content)
                 print(f"Word document has been successfully saved to {file_path}")
 
-            return self.extract_text_data_from_docx(file_path)
+            stamp_txt = ""
+            stamps = ocr_data["identify_results"][0]["details"]["stamp"]
+            for stamp in stamps:
+                stamp_txt = stamp_txt + "\n" + stamp["result"]
+
+            return self.extract_text_data_from_docx(file_path) + stamp_txt
         else:
             print(f"Failed to export document. Status code: {response.status_code}, Response: {response.text}")
             return None
@@ -104,17 +110,17 @@ class DocumentHacker:
         doc = Document(docx_path)
         full_text = []
 
-        # Traverse the document to maintain the order of paragraphs, tables, and text boxes
+        # Traverse the `document to maintain the order of paragraphs, tables, and text boxes
         def recursive_extract(element):
             for child in element:
                 if child.tag.endswith('p'):
-                    para_text = ''.join([node.text for node in child.findall('.//w:t', namespaces=doc.element.nsmap)])
+                    para_text = ' '.join([node.text for node in child.findall('.//w:t', namespaces=doc.element.nsmap)])
                     full_text.append(para_text)
                 elif child.tag.endswith('tbl'):
                     for row in child.findall('.//w:tr', namespaces=doc.element.nsmap):
                         row_text = []
                         for cell in row.findall('.//w:tc', namespaces=doc.element.nsmap):
-                            cell_text = ''.join(
+                            cell_text = '\\n'.join(
                                 [node.text for node in cell.findall('.//w:t', namespaces=doc.element.nsmap)])
                             row_text.append(cell_text)
                         full_text.append('\t'.join(row_text))
@@ -142,6 +148,51 @@ class DocumentHacker:
 
         return '\n'.join(cleaned_lines)
 
+    # 根据ocr后的文本和坐标，输出有相对位置的纯文本
+    @staticmethod
+    def re_layout(ocr_data):
+        w = 100
+        h = 150
+        results = ocr_data["identify_results"][0]["details"]["print"]
+        image_width = int(ocr_data["identify_results"][0]["region"][2])
+        image_height = int(ocr_data["identify_results"][0]["region"][3])
+        zoom_in = int(image_width / w)
+        zoom_in = 10 if zoom_in > 10 else zoom_in
+
+        # Initialize a blank canvas for text placement
+        canvas = [[" " for _ in range(image_width)] for _ in range(image_height)]
+
+        # Place the recognized text into the canvas
+        for result in results:
+            text = result["result"]
+            x_start = int(result["region"][0] / zoom_in)
+            y_start = int(result["region"][1] / zoom_in)
+            for i, char in enumerate(text):
+                if x_start + i < image_width:
+                    if canvas[y_start][x_start + i] != " ":
+                        print("Overwriting character:{} at {},{}\n".format(canvas[y_start][x_start + i], x_start + i,
+                                                                           y_start))
+                    canvas[y_start][x_start + i] = char
+
+        # Remove extra blank lines
+        new_canvas = []
+        for row in canvas:
+            if not all(char == " " for char in row):
+                new_canvas.append(row)
+
+        # Remove extra blank columns
+        transposed_canvas = list(map(list, zip(*new_canvas)))
+        new_transposed_canvas = []
+        for col in transposed_canvas:
+            if not all(char == " " for char in col):
+                new_transposed_canvas.append(col)
+
+        new_canvas = list(map(list, zip(*new_transposed_canvas)))
+
+        # Convert the canvas into a single string
+        output_text = "\n".join("".join(row).rstrip() for row in new_canvas)
+        return output_text
+
     def process_document(self, file_path, save_path='tmp'):
         upload_response = self.upload_image(file_path)
         if upload_response == "A001":
@@ -150,11 +201,26 @@ class DocumentHacker:
 
         if 'response' in upload_response and 'data' in upload_response['response']:
             document_uid = upload_response['response']['data']['uid']
-            success = self.check_document_status(document_uid)
+            success, ret = self.check_document_status(document_uid)
             if not success:
                 return None
-            text_data = self.export_document_to_word(document_uid, save_path)
-            print(f"[Text data]\n {text_data}")
+
+            has_table = False
+            try:
+                if len(ret["identify_results"][0]["details"]["tables"]) >= 1:
+                    has_table = True
+            except Exception as e:
+                print(f"解析结果出错：{e} \n {ret}")
+                pass
+
+            if has_table:
+                print(f"有表格数据，使用导出word并提取文本的方式：{file_path}")
+                text_data = self.export_document_to_word(ret, document_uid, save_path)
+            else:
+                print(f"使用导出自定义文本布局方式：{file_path}")
+                text_data = self.re_layout(ret)
+
+            # print(f"[Text data]\n {text_data}")
             cleaned_text = self.clean_empty_line(text_data)
             return cleaned_text
         else:
@@ -169,5 +235,5 @@ if __name__ == "__main__":
 
     # 处理文档，包括上传、检查状态、导出和文本提取
     # return: None， 表示不成功
-    text = processor.process_document('/Users/qinqiang02/job/客户/百胜新财务影像和档案系统/poc/缴费通知单1/86002212.png')
+    text = processor.process_document('/Users/qinqiang02/job/产品/文档AI/结账单/handwritten/Picture6.pdf')
     print(text)

@@ -39,6 +39,7 @@ class LLMOpenAI:
             if self.isOpenai and self.stream:
                 kwargs["stream_options"] = {"include_usage": True}
 
+            logging.info(f"LLM request args: {kwargs}")
             response = self.client.chat.completions.create(**kwargs)
         except Exception as e:
             print(f"调用openai出错：{e}")
@@ -48,6 +49,7 @@ class LLMOpenAI:
         if not self.stream:
             result = response.choices[0].message.content
             logging.info(f"***total tokens***: {response.usage}")
+            print(f"***total tokens***: {response.usage}")
         else:
             for chunk in response:
                 if 'usage' in chunk and chunk.usage:

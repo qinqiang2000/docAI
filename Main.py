@@ -5,7 +5,7 @@ st.set_page_config(
     page_icon="👋",
 )
 
-st.write("## 欢迎使用```piaozone``` Document AI平台 👋")
+st.write("## 欢迎使用```金蝶发票云``` Document AI平台 👋")
 
 
 st.markdown(
