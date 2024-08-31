@@ -14,6 +14,7 @@ EVALUATE_DIR = "data/evaluate"
 
 class OCRProvider(Enum):
     REGENAI_DOC_HACK = 2
+    RuiZhen_HACK = 3
     RuiZhen = 1
     MOCK = 6
 
@@ -54,7 +55,8 @@ def flatten_if_single_nested_array(arr: List[Any]) -> List[Any]:
 
 # Custom parser
 def extract_json(text: str) -> List[dict]:
-    """Extracts JSON content from a string where JSON is embedded between ```json and ``` tags.
+    """Extracts JSON content from a string where JSON is embedded between ```json and ``` tags,
+    or handles pure JSON strings.
 
     Parameters:
         text (str): The text containing the JSON content.
@@ -62,14 +64,21 @@ def extract_json(text: str) -> List[dict]:
     Returns:
         list: A list of extracted JSON objects.
     """
-    # Define the regular expression pattern to match JSON blocks
-    pattern = r"```(?:json)?\s*([\s\S]*?)\s*```"
+    extracted_json = []
 
-    # Find all non-overlapping matches of the pattern in the string
+    # Step 1: Attempt to parse the whole text as JSON directly (in case it's a pure JSON string)
+    try:
+        parsed_json = json.loads(text.strip())
+        extracted_json.append(parsed_json)
+        return extracted_json  # If successfully parsed as JSON, return it
+    except json.JSONDecodeError:
+        pass  # If not a valid JSON, proceed to step 2
+
+    # Step 2: If not a pure JSON, use regular expressions to extract JSON blocks
+    pattern = r"```(?:json)?\s*([\s\S]*?)\s*```"
     matches = re.findall(pattern, text, re.DOTALL)
 
     # Attempt to parse the matches as JSON
-    extracted_json = []
     for match in matches:
         # Remove the 'json' string if present at the beginning
         cleaned_match = re.sub(r"^json\s*", "", match.strip(), flags=re.IGNORECASE)

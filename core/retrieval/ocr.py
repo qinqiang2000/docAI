@@ -81,6 +81,8 @@ def ocr(doc_path, page_no, provider=OCRProvider.MOCK, lang=DocLanguage.chs):
     elif provider == OCRProvider.REGENAI_DOC_HACK:
         hacker = DocumentHacker()
         text = hacker.process_document(doc_path)
+    elif provider == OCRProvider.RuiZhen_HACK:
+        text = ruizhen_hack_ocr(doc_path, lang)
 
     # 将结果写入缓存文件
     if ocr_cache and text and len(text) > 20:

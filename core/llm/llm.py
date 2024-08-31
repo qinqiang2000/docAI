@@ -6,6 +6,7 @@ from enum import Enum
 from openai.lib.azure import AzureOpenAI
 
 from core.common import extract_json
+from core.llm.llm_hunyuan import hunyuan_text
 from core.llm.llm_openai import LLMOpenAI
 from groq import Groq
 
@@ -21,6 +22,7 @@ class LlmProvider(Enum):
     # GPT4 = 2
     # MOONSHOT = 4
     # GEMINI_PRO = 5
+    HUNYUAN_V = 93
     MOCK = 6
 
 
@@ -130,6 +132,11 @@ def extract(text, provider=LlmProvider.AZURE_GPT4oMini, sys_prompt=None, callbac
         file_path = text
         logging.info(f"using GPT4o_V to extract file: {file_path}")
         return LLMOpenAI("gpt-4o", None, True, callback).generate_text("", sys_prompt, file_path)
+
+    if provider == LlmProvider.HUNYUAN_V:
+        file_path = text
+        logging.info(f"using HUNYUAN_V to extract file: {file_path}")
+        return hunyuan_text(file_path, sys_prompt, callback)
 
     if provider == LlmProvider.LLaMA31_70b_GROQ:
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"), )

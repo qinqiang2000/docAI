@@ -30,6 +30,8 @@ def extract_text(ret):
             text_list.append(p['result'])
         for h in result['details']['handwritten']:
             text_list.append(h['result'])
+        for h in result['details']['stamp']:
+            text_list.append(h['result'])
 
     return "\n".join(text_list)
 

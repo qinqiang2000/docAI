@@ -5,6 +5,7 @@ import requests
 import time
 from dotenv import load_dotenv, set_key
 
+from core.common import DocLanguage
 from core.retrieval.ocr_ruizhen import extract_text
 
 load_dotenv(override=True)
@@ -62,7 +63,7 @@ def get_access_token(username=None, password=None):
         raise Exception("Failed to get access token: " + response_data.get('message', 'Unknown error'))
 
 
-def ruizhen_hack_ocr(img_path, lang):
+def ruizhen_hack_ocr(img_path, lang=DocLanguage.chs):
     global token
     url = hack_url + lang.name
 
@@ -95,4 +96,10 @@ def ruizhen_hack_ocr(img_path, lang):
 
     # 关闭文件
     files['image_file'][1].close()
+    logging.info(f"ruizhen返回：\n{ret}")
     return ret
+
+
+if __name__ == "__main__":
+    text = ruizhen_hack_ocr('/Users/qinqiang02/job/产品/文档AI/结账单/handwritten/Picture1.pdf')
+    print(text)

@@ -4,6 +4,7 @@ import pdfplumber
 from dotenv import load_dotenv
 import logging
 import re
+from pdf2image import convert_from_path
 
 from core.common import OCRProvider, DocLanguage
 from core.retrieval.ocr import ocr
@@ -30,12 +31,16 @@ def cid_percentage(text):
 def save_page_as_image(pdf_path, page):
     file_path, filename = os.path.split(pdf_path)
     file_base, file_extension = os.path.splitext(filename)
-    dest_path = os.path.join(file_path, 'tmp', f"{file_base}_{page.page_number}.png")
+    dest_path = os.path.join(file_path, 'tmp', f"{file_base}_{page}.png")
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
-    image = page.to_image(resolution=300)
+    # 将PDF文件的每一页转换为图像
+    images = convert_from_path(pdf_path)
+    image = images[page]
     image.save(dest_path, format='PNG')
-    logging.info(f"已保存第{page.page_number}页到：{dest_path}")
+    # image = page.to_image(resolution=300)
+    # image.save(dest_path, format='PNG')
+    logging.info(f"已保存第{page}页到：{dest_path}")
     return dest_path
 
 
@@ -69,7 +74,7 @@ def async_load(doc_path, queue, provider=OCRProvider.RuiZhen, lang=DocLanguage.c
         if provider is None or not text or len(text) < 39 or cid_percentage(text) > 19:
             logging.info(f"扫描件[{osp.split(doc_path)[1]}]: len(text)[{len(text)}]]")
             if provider is None:
-                text = save_page_as_image(doc_path, page_no)
+                text = save_page_as_image(doc_path, page)
             else:
                 text = ocr(doc_path, page, provider, lang)
 

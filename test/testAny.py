@@ -2,6 +2,8 @@ import json
 import re
 from typing import List, Any
 
+from PIL import Image
+
 from core.retrieval.ocr_ruizhen_doc_hacker import DocumentHacker
 
 
@@ -127,77 +129,28 @@ target_directory = '/Users/qinqiang02/Desktop/banks'
 token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiIxMzcxNDk2MjYwNCIsInNjb3BlIjpbInNlcnZlciJdLCJpZCI6ODY0MSwiZXhwIjoxNzI0NDg1MjA1LCJhdXRob3JpdGllcyI6WyJST0xFX0RJU1RSSUJVVE9SIiwiUk9MRV9MQUJFTCJdLCJqdGkiOiI0NDlmYWYyYy1iZTdkLTQ4NmEtYjY2Ny0wMjEzN2RiMTk1ZTYiLCJjbGllbnRfaWQiOiJnbG9yaXR5LW9hdXRoIn0.602o20_BSlrSfhoEUBJKfMIfVSvg47PwYe8l2Z4N_0U"
 # batch_ruizhen_doc("/Users/qinqiang02/job/客户/索菲亚电子档案/银行回单测试_banks", token)
 
-import json
-from openai import AzureOpenAI
-import os
-import dotenv
-import openai
-dotenv.load_dotenv()
+def display_img_pdf(image_path):
+    # 获取图片文件的目录和文件名
+    image_dir = os.path.dirname(image_path)
+    image_filename = os.path.splitext(os.path.basename(image_path))[0]
 
-# Setting up the deployment name
-deployment_name = "gpt-4o"
+    # 构造输出PDF文件的路径
+    output_pdf_path = os.path.join(image_dir, f"{image_filename}.pdf")
 
-# The API key for your Azure OpenAI resource.
-api_key = "b90546f796434a0a9535213f455c3647"
+    # 打开图片并转换为RGB格式（如有需要）
+    image = Image.open(image_path)
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
 
-# The base URL for your Azure OpenAI resource. e.g. "https://<your resource name>.openai.azure.com"
-azure_endpoint = "https://test-openai-service-wus3-rg4.openai.azure.com/"
+    # 保存为PDF
+    image.save(output_pdf_path, "PDF")
+    return output_pdf_path
 
-# Currently OPENAI API have the following versions available: 2022-12-01
-api_version = "2024-05-01-preview"
+root_dir ="/Users/qinqiang02/job/产品/文档AI/结账单/printed/"
+# 列出 root_dir 目录下的所有文件和文件夹
+for filename in os.listdir(root_dir):
+    # 获取当前文件的完整路径
+    fp = os.path.join(root_dir, filename)
 
-client = AzureOpenAI(
-  api_key=api_key,
-  azure_endpoint=azure_endpoint,
-  api_version=api_version
-)
-# Give your prompt here
-prompt = "Hello world"
-
-# A sample API call for chat completions looks as follows:
-# Messages must be an array of message objects, where each object has a role (either "system", "user", or "assistant") and content (the content of the message).
-# For more info: https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference#chat-completions
-
-try:
-    response = client.chat.completions.create(
-        model=deployment_name,
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Who won the world series in 2020?"}
-        ]
-    )
-
-    # print the response
-    print(response.choices[0].message.content)
-
-except openai.AuthenticationError as e:
-    # Handle Authentication error here, e.g. invalid API key
-    print(f"OpenAI API returned an Authentication Error: {e}")
-
-except openai.APIConnectionError as e:
-    # Handle connection error here
-    print(f"Failed to connect to OpenAI API: {e}")
-
-except openai.BadRequestError as e:
-    # Handle connection error here
-    print(f"Invalid Request Error: {e}")
-
-except openai.RateLimitError as e:
-    # Handle rate limit error
-    print(f"OpenAI API request exceeded rate limit: {e}")
-
-except openai.InternalServerError as e:
-    # Handle Service Unavailable error
-    print(f"Service Unavailable: {e}")
-
-except openai.APITimeoutError as e:
-    # Handle request timeout
-    print(f"Request timed out: {e}")
-
-except openai.APIError as e:
-    # Handle API error here, e.g. retry or log
-    print(f"OpenAI API returned an API Error: {e}")
-
-except:
-    # Handles all other exceptions
-    print("An exception has occured.")
+    if os.path.isfile(fp) and (filename.lower().endswith('.png') or filename.lower().endswith('.jpg')):
+        display_img_pdf(fp)

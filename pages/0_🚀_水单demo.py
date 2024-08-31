@@ -22,10 +22,10 @@ st.set_page_config(
 )
 
 # 自定义CSS来减少边距和填充
-custom_page_styles()
+custom_page_styles(0)
 
 screen_height = streamlit_js_eval(js_expressions='screen.height', key='SCR')
-height = None if not screen_height else screen_height - 100
+height = None if not screen_height else screen_height - 90
 hostname = streamlit_js_eval(js_expressions='window.location.hostname', key='hostname')
 
 # Create an instance of the manager
@@ -150,7 +150,7 @@ with st.sidebar:
 
     # 如果是直接用llm，则不显示OCR选项
     if not pure_llm(session["selected_llm_provider"]):
-        ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), help="图片类文件才需OCR")
+        ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), index=1, help="图片类文件才需OCR")
         session["selected_ocr_provider"] = OCRProvider[ocr_provider]
     else:
         session["selected_ocr_provider"] = None
@@ -180,7 +180,30 @@ column_config = {
 }
 
 
-# 右面板，呈现数据
+# # 右面板，呈现数据
+def show_receipt_check(receipt):
+    for r in receipt:
+        headcount = r['消费人数']
+        total = r['金额']
+
+        if not (headcount and headcount > 0):
+            st.write("无法识别人数")
+            return
+
+        if total and total > 0:
+            st.markdown(f"人均消费: ```{total/headcount:.2f}``` 元")
+
+        drink_total = 0
+        drink_names = []
+        for c in r['菜品明细']:
+            if c['酒水'] and c['小计']:
+                drink_total += c['小计']
+                drink_names.append(c['名称'])
+
+        st.markdown(f"人均酒水饮料: ```{drink_total / headcount:.2f}``` 元")
+        st.markdown(f"酒水饮料清单: ```{drink_names}``` ")
+
+
 with col2.container(height=height, border=False):  # Adjusted for interface elements
     # 暂不展示表格类数据
     # if 'data' in session and session['data']:
@@ -198,5 +221,6 @@ with col2.container(height=height, border=False):  # Adjusted for interface elem
             if isinstance(json_, list):
                 for j in json_:
                     session["result_placeholder"].write(j)
+                    show_receipt_check(j)
         except ValueError:
             session["result_placeholder"].write(session['text'])
