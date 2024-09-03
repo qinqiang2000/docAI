@@ -8,7 +8,7 @@ import shutil
 app = Flask(__name__)
 
 directory = os.getcwd()
-saft_folder = ["tmp", "data/dataset"]
+safe_folder = ["tmp", "data/dataset"]
 
 port = 8090
 
@@ -39,7 +39,7 @@ def serve_pdf():
     fn = request.args.get('fn')
 
     # 判断folder是否在安全目录或其子目录中
-    if not any(os.path.commonpath([os.path.dirname(fn), safe]) == safe for safe in saft_folder):
+    if not any(os.path.commonpath([os.path.dirname(fn), safe]) == safe for safe in safe_folder):
         return 'Invalid request'
 
     return send_from_directory(directory, fn, as_attachment=False)
