@@ -24,7 +24,7 @@ st.set_page_config(
     }
 )
 
-EXTRACTOR_LLM = LlmProvider.LLaMA31_70b_GROQ
+EXTRACTOR_LLM = LlmProvider.AZURE_GPT4oMini
 MATCH_LLM = LlmProvider.AZURE_GPT4oMini
 
 # 自定义CSS来减少边距和填充
@@ -74,6 +74,7 @@ def process(file):
 
     _id = file_path.split("/")[-1].split(".")[0]
     if _id in session:
+        time.sleep(1.5)
         return ext, file_path, [session[_id]]
 
     extractor = manager.get_extractor(ext)
@@ -107,9 +108,11 @@ def build_relation(nodes):
     match = extract_json(_str)
     for m in match[0]:
         edges.append(Edge(source=m['inv_id'],
-                          label="合规关联",
+                          label="一致",
                           target=m['r_id'],)
                      )
+
+    print(edges)
     return edges
 
 
@@ -125,6 +128,7 @@ if 'edges' not in session:
     session['edges'] = []
 
 st.markdown("###  📝```Document Relationship Check``` ")
+log_placeholder = st.empty()
 
 # 侧边栏
 with st.sidebar:
@@ -136,12 +140,13 @@ with st.sidebar:
 cols = [0.65, 0.35]
 col1, col2 = st.columns(cols)
 
-if btn and _files and len(_files) > 0:
-    st.sidebar.empty()
+if btn:
     session['nodes'] = []
     session['edges'] = []
 
-    log_placeholder = st.empty()
+if btn and _files and len(_files) > 0:
+    st.sidebar.empty()
+
     for i, _file in enumerate(_files):
         log_placeholder.write(f"{i + 1}/{len(_files)}: 正在处理**{_file.name}**")
         session['text'] = ""
@@ -176,14 +181,15 @@ if btn and _files and len(_files) > 0:
                                      ),
                                 )
 
-    log_placeholder.write(f"正在检查{len(_files)}个节点的关系**")
+    log_placeholder.write(f"正在检查{len(_files)}个节点的关系")
     session['edges'] = build_relation(session['nodes'])
+    log_placeholder.markdown("```Completed```")
 
 with col1:
     config = Config(width=750,
                     height=950,
                     directed=True,
-                    physics=True,
+                    physics=False,
                     hierarchical=False,
                     # **kwargs
                     )
@@ -191,6 +197,5 @@ with col1:
     return_value = agraph(nodes=session['nodes'],
                           edges=session['edges'],
                           config=config)
-
 with col2:
     session["result_placeholder"] = st.empty()

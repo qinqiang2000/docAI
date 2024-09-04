@@ -144,13 +144,13 @@ with st.sidebar:
     session['selected_extractor'] = st.selectbox("提取器", options=available_extractors,
                                                  help="暂不支持多选")
 
-    llm_provider = st.selectbox("LLM", options=list(LlmProvider.__members__.keys()),
+    llm_provider = st.selectbox("LLM", options=list(LlmProvider.__members__.keys()), index=1,
                                 help="带_V表示用纯视觉提取，不需先OCR")
     session["selected_llm_provider"] = LlmProvider[llm_provider]
 
     # 如果是直接用llm，则不显示OCR选项
     if not pure_llm(session["selected_llm_provider"]):
-        ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), index=1, help="图片类文件才需OCR")
+        ocr_provider = st.selectbox("OCR", options=list(OCRProvider.__members__.keys()), index=0, help="图片类文件才需OCR")
         session["selected_ocr_provider"] = OCRProvider[ocr_provider]
     else:
         session["selected_ocr_provider"] = None

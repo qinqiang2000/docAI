@@ -1,4 +1,4 @@
-import streamlit
+import streamlit as st
 from streamlit_agraph import agraph, Node, Edge, Config
 
 nodes = []
@@ -24,17 +24,13 @@ edges.append( Edge(source="Captain_Marvel",
 config = Config(width=750,
                 height=950,
                 directed=True,
-                physics=True,
-                hierarchical=False,
-                # **kwargs
+                physics=True
                 )
 
 return_value = agraph(nodes=nodes,
                       edges=edges,
                       config=config)
 
-
-for n in nodes:
-    print(n.to_dict().get("_type"))
-    print(n.to_dict().get("_data"))
-    print(n.id)
+# 显示点击的节点信息
+if return_value:
+    st.write(f"你点击了: {return_value}")

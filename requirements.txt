@@ -11,3 +11,4 @@ flask
 pandas
 openpyxl
 python-docx
+streamlit-agraph
