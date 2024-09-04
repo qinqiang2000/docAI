@@ -12,3 +12,5 @@ pandas
 openpyxl
 python-docx
 streamlit-agraph
+tencentcloud-sdk-python
+pdftotext
